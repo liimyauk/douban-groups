@@ -1,0 +1,2156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豆瓣小组</title>
+<style>
+:root {
+  --bg: #0a0e16;
+  --bg-elevated: #111;
+  --bg-gradient-1: rgba(25,55,45,0.2);
+  --bg-gradient-2: rgba(30,45,90,0.05);
+  --text: #c8c8c8;
+  --text-secondary: #b0b0b0;
+  --text-muted: #555;
+  --text-dim: #444;
+  --text-emphasis: #e0e0e0;
+  --border: #1a1a1a;
+  --border-subtle: #141414;
+  --border-medium: #2a2a2a;
+  --accent: #7ec8a0;
+  accent-color: var(--accent);
+  --accent-bg: #1a3a2a;
+  --fav: #f0c040;
+  --error: #e07070;
+  --header-bg: rgba(10,12,14,0.75);
+  --card-bg: rgba(255,255,255,0.015);
+  --card-hover: rgba(255,255,255,0.035);
+  --scrollbar-track: #111;
+  --scrollbar-thumb: #333;
+  --accent-highlight: rgba(126,200,160,0.4);
+  --accent-border: rgba(126,200,160,0.3);
+  --accent-subtle: rgba(126,200,160,0.06);
+  --accent-glow: rgba(126,200,160,0.08);
+  --accent-secondary: #6ab0d6;
+  --bg-elevated-hover: rgba(26,26,26,0.9);
+  --card-shadow: 0 2px 10px rgba(0,0,0,0.22);
+}
+
+[data-theme="light"] {
+  --bg: #f4ede1;
+  --bg-elevated: #ece4d5;
+  --bg-gradient-1: rgba(196,156,110,0.14);
+  --bg-gradient-2: rgba(150,180,140,0.08);
+  --text: #37322b;
+  --text-secondary: #6e675c;
+  --text-muted: #908878;
+  --text-dim: #a89f8e;
+  --text-emphasis: #292520;
+  --border: #d9d0bf;
+  --border-subtle: #e5dccb;
+  --border-medium: #cbc1ae;
+  --accent: #2e8b5f;
+  --accent-bg: #d9e8d3;
+  --fav: #c08a10;
+  --error: #c05050;
+  --header-bg: rgba(244,237,225,0.85);
+  --card-hover: rgba(120,100,70,0.06);
+  --accent-highlight: rgba(46,139,95,0.28);
+  --accent-border: rgba(46,139,95,0.22);
+  --accent-subtle: rgba(46,139,95,0.08);
+  --accent-glow: rgba(46,139,95,0.1);
+  --accent-secondary: #5a8f9a;
+  --bg-elevated-hover: rgba(120,100,70,0.07);
+  --scrollbar-track: #e4dccb;
+  --scrollbar-thumb: #c4baa8;
+  --card-bg: rgba(251,245,235,0.72);
+  --card-shadow: 0 2px 10px rgba(140,110,70,0.1);
+}
+
+/* ---- Reset & base ---- */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { font-size: 15px; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(ellipse at 50% 0%, var(--bg-gradient-1) 0%, var(--bg) 65%),radial-gradient(ellipse at 80% 100%, var(--bg-gradient-2, transparent) 0%, transparent 50%);
+  color: var(--text);
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  line-height: 1.6;
+  min-height: 100vh;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0.035;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-elevated); }
+::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 3px; }
+
+/* ---- Structure ---- */
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+/* ---- Header ---- */
+header.scrolled {
+  box-shadow: 0 4px 30px rgba(0,0,0,0.3), 0 1px 0 rgba(126,200,160,0.06);
+  border-bottom-color: var(--border-medium);
+}
+
+header {
+  border-bottom: 1px solid var(--border-subtle);
+  border-image: linear-gradient(90deg, transparent, rgba(126,200,160,0.15), transparent) 1;
+  padding: 18px 0 14px;
+  position: sticky;
+  top: 0;
+  background: var(--header-bg);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  z-index: 10;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.brand {
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #7ec8a0, #6ab0d6, #a078d0);
+  background-size: 200% 200%;
+  animation: shimmerText 4s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.nav-path {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.nav-path span { color: var(--text-muted); }
+.nav-path .active { color: var(--text-muted); }
+
+/* ---- Input ---- */
+.input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+.input-row input {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--text);
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle), 0 0 24px var(--accent-glow);
+}
+.input-row input::placeholder { color: var(--text-dim); }
+
+/* ---- Discussion / post search ---- */
+.disc-search-wrap, .post-search-wrap {
+  margin: 10px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.disc-search, .post-search {
+  flex: 1;
+  max-width: 340px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--text);
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.75rem;
+  outline: none;
+  border-radius: 6px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.disc-search:focus, .post-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+.disc-search::placeholder, .post-search::placeholder { color: var(--text-dim); }
+.post-search { max-width: 260px; }
+.btn {
+  background: var(--border);
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  border-radius: 6px;
+}
+.btn:hover { background: var(--bg-elevated-hover); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 24px var(--accent-subtle); }
+.btn-primary { background: var(--accent-bg); border-color: var(--accent-bg); color: var(--accent); }
+.btn-primary:hover { background: var(--accent-bg); border-color: var(--accent); }
+.theme-btn {
+  background: none;
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+  padding: 0;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.theme-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-subtle);
+}
+.theme-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-subtle);
+}
+
+/* ---- Minimal mode image placeholders ---- */
+.img-ph-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  min-height: 48px;
+  padding: 6px 10px;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-medium);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  line-height: 1.4;
+}
+.img-ph-label:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-subtle);
+}
+.comment-imgs .img-ph-label { min-width: 72px; min-height: 40px; }
+.minimal-mode .image-gallery .img-box,
+.minimal-mode .comment-imgs .img-box { display: inline-block; }
+
+.btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+.btn-back { margin-right: 4px; }
+
+/* ---- Status bar ---- */
+.status {
+  padding: 10px 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 36px;
+}
+.status.loading { color: var(--accent); }
+.status.error { color: var(--error); }
+.status .info { color: var(--text-muted); }
+
+/* ---- Main content ---- */
+main {
+  flex: 1;
+  padding: 20px 0;
+}
+
+/* ---- Group list ---- */
+.group-list {
+  list-style: none;
+}
+.group-list li {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.group-list li a {
+  display: block;
+  padding: 10px 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+  border-radius: 6px;
+}
+.group-list li a:hover {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding-left: 14px;
+}
+.group-list li .group-id {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  margin-left: 8px;
+}
+
+/* ---- Discussion list ---- */
+.disc-list { list-style: none; }
+.disc-list, .post-header, .comments-section {
+  animation: fadeIn 0.35s ease both;
+}
+
+.disc-item {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  margin: 3px 0;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: var(--card-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: var(--card-shadow);
+  transition: all 0.25s ease;
+}
+.disc-item:hover {
+  background: var(--card-hover);
+  border-color: var(--accent-subtle);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(126,200,160,0.08);
+}
+.disc-item .title {
+  font-size: 0.9rem;
+  color: var(--text-emphasis);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.disc-item .title a {
+  color: inherit;
+  text-decoration: none;
+}
+.disc-item:hover .title a { color: var(--accent); }
+.disc-item .meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 16px;
+}
+.disc-item .meta .author { color: var(--text-muted); }
+.disc-item .meta .replies {
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 0.62rem;
+  line-height: 1.6;
+}
+.disc-item .title a { transition: color 0.15s; }
+.disc-item.read { opacity: 0.72; }
+.disc-item.read .title,
+.disc-item.read .title a { color: var(--text-dim); }
+.disc-item.read:hover { opacity: 0.9; }
+
+/* ---- Post detail ---- */
+.post-header {
+  margin-bottom: 24px;
+}
+.post-header h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-emphasis);
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  margin-bottom: 8px;
+}
+.post-header .meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 16px;
+}
+.post-body {
+  font-size: 0.9rem;
+  line-height: 1.9;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  padding: 20px 16px;
+  margin: 8px 0 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+mark {
+  background: var(--accent-highlight);
+  color: var(--text-emphasis);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+::selection {
+  background: var(--accent-highlight);
+  color: var(--text-emphasis);
+}
+
+/* ---- Comments ---- */
+.comments-section h3 {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.comment {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.15s;
+}
+.comment:hover { background: var(--card-hover); }
+.comment:last-child { border-bottom: none; }
+.comment .author {
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.comment .time {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+.comment .floor {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  margin-right: 4px;
+}
+.comment .content {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.comment-imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.comment-imgs a {
+  display: inline-block;
+  line-height: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.comment-imgs img {
+  max-width: 140px;
+  max-height: 140px;
+  object-fit: cover;
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  cursor: zoom-in;
+  transition: all 0.15s;
+  background: var(--bg-elevated);
+}
+.comment-imgs img:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+  transform: scale(1.03);
+}
+.comment-locked {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  border: 1px dashed var(--border-medium);
+  border-radius: 8px;
+}
+
+/* ---- Section title ---- */
+.section-title {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ---- Empty / Welcome ---- */
+.welcome {
+  text-align: center;
+  padding: 60px 20px;
+}
+.welcome .glyph {
+  font-size: 1.5rem;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  border-radius: 50%;
+  background: var(--accent-subtle);
+  box-shadow: 0 0 40px var(--accent-glow);
+}
+.welcome p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 2;
+}
+.welcome .hint {
+  color: var(--accent);
+  font-size: 0.8rem;
+  margin-top: 20px;
+  opacity: 0.8;
+}
+.welcome .example {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 8px;
+}
+.welcome .example span {
+  display: inline-block;
+  background: var(--bg-elevated);
+  padding: 2px 8px;
+  border: 1px solid var(--border-medium);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.welcome .example span:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+/* ---- Quick nav ---- */
+.quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 20px;
+}
+.quick-nav button {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 4px;
+}
+.quick-nav button:hover { color: var(--accent); border-color: var(--border-medium); }
+
+/* ---- Footer ---- */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 14px 0;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+ text-align: center;
+}
+
+/* ---- Image gallery ---- */
+.image-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.image-gallery img {
+  max-width: 200px;
+  max-height: 200px;
+  object-fit: cover;
+  border: 1px solid var(--border-medium);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.image-gallery img:hover {
+  border-color: var(--accent-highlight);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* ---- Favorite groups ---- */
+.fav-toggle {
+  background: none;
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: 6px;
+}
+.fav-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.fav-toggle.active { color: var(--fav); border-color: var(--fav); }
+.fav-toggle.active:hover { border-color: var(--fav); }
+.fav-bar {
+  margin: 8px 0 12px;
+  display: none;
+}
+.fav-bar.show { display: block; }
+.fav-bar .fav-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 14px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: var(--card-shadow);
+}
+.fav-bar .fav-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.fav-bar .fav-label .fav-count {
+  color: var(--fav);
+  font-size: 0.65rem;
+  margin-left: 4px;
+}
+.fav-bar .fav-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fav-tag {
+  display: inline-block;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--fav);
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin: 3px;
+  transition: all 0.15s;
+}
+.fav-tag:hover { border-color: var(--fav); background: rgba(240,192,64,0.06); }
+.fav-del {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 0 3px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.fav-del:hover {
+  color: var(--error);
+  background: rgba(192,80,80,0.12);
+}
+.recent-tag {
+  display: inline-block;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin: 3px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.recent-tag:hover {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
+}
+.fav-count { color: var(--text-muted); font-size: 0.65rem; margin-left: 2px; }
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  html { font-size: 15px; }
+  .container { padding: 0 12px; }
+  .header-inner { gap: 6px; }
+  .header-inner .brand { flex: 0 0 100%; text-align: center; }
+  .input-row { flex: 1; min-width: 0; }
+  .input-row input { font-size: 0.8rem; padding: 6px 10px; }
+  .btn { padding: 6px 12px; font-size: 0.75rem; }
+  .btn-sm { padding: 3px 8px; font-size: 0.7rem; }
+  .section-title { font-size: 0.65rem; }
+  .disc-item { padding: 10px 12px; margin: 3px 0; }
+  .disc-item .title { font-size: 0.85rem; }
+  .disc-item .meta { font-size: 0.65rem; gap: 10px; }
+  .post-header h2 { font-size: 0.95rem; }
+  .post-body { padding: 14px 10px; font-size: 0.8rem; }
+  .comment { padding: 10px 6px; }
+  .comment-imgs img { max-width: 96px; max-height: 96px; }
+  .img-ph-label { min-width: 72px; min-height: 40px; font-size: 0.6rem; }
+  .comment-imgs .img-ph-label { min-width: 64px; min-height: 36px; }
+  .comment .floor {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  margin-right: 4px;
+}
+.comment .content { font-size: 0.78rem; }
+  .status { font-size: 0.65rem; padding: 6px 0; }
+  .fav-bar { margin: 6px 0 8px; }
+  .image-gallery { gap: 4px; }
+  .image-gallery img { max-width: 120px; max-height: 120px; }
+  .float-actions { bottom: 16px; right: 14px; gap: 6px; }
+  .float-btn { width: 34px; height: 34px; font-size: 0.95rem; }
+  .theme-btn { width: 30px; height: 30px; font-size: 0.9rem; }
+  .page-toolbar { padding: 8px 10px; margin-bottom: 10px; }
+  .toolbar-row { gap: 8px; }
+  .toolbar-title .group-name { font-size: 0.85rem; }
+  .toolbar-title .group-count { font-size: 0.65rem; }
+  .btn-icon { width: 30px; height: 30px; font-size: 0.85rem; border-radius: 7px; }
+  .sort-group .sort-btn { font-size: 0.65rem; padding: 3px 10px; }
+  .sort-label { font-size: 0.6rem; }
+  .lightbox img { max-width: 95%; max-height: 85%; }
+  .quick-nav button { font-size: 0.65rem; padding: 3px 8px; }
+  .fav-tag { font-size: 0.65rem; padding: 2px 8px; }
+}
+@media (max-width: 400px) {
+  html { font-size: 14px; }
+  .disc-item { padding: 8px 8px; }
+  .disc-item .title { font-size: 0.82rem; }
+  .image-gallery img { max-width: 90px; max-height: 90px; }
+  .image-gallery { gap: 3px; }
+  .post-body { padding: 10px 8px; }
+  .float-actions { bottom: 12px; right: 10px; }
+  .float-btn { width: 30px; height: 30px; font-size: 0.85rem; }
+}
+
+/* ---- Floating actions ---- */
+.float-actions {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.float-actions.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.float-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.22s ease, opacity 0.22s ease;
+}
+.float-actions.expanded .float-sub {
+  max-height: 200px;
+  opacity: 1;
+}
+.float-more {
+  transition: transform 0.22s ease;
+}
+.float-actions.expanded .float-more {
+  transform: rotate(180deg);
+}
+.float-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-elevated);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+}
+.float-btn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  background: var(--bg-elevated-hover);
+  box-shadow: 0 0 28px var(--accent-subtle), 0 6px 24px rgba(0,0,0,0.3);
+  transform: scale(1.08);
+}
+
+/* ---- Loading animation ---- */
+@keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
+.loading-dots span {
+ animation: pulse 1.4s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* ---- Lightbox ---- */
+.lightbox {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.92);
+  z-index: 200;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox.show {
+  display: flex;
+}
+.lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  cursor: zoom-in;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 4px;
+}
+
+
+/* ---- Animations ---- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.disc-list li {
+  animation: slideUp 0.45s ease both;
+}
+.disc-list li:nth-child(1) { animation-delay: 0.02s; }
+.disc-list li:nth-child(2) { animation-delay: 0.04s; }
+.disc-list li:nth-child(3) { animation-delay: 0.06s; }
+.disc-list li:nth-child(4) { animation-delay: 0.08s; }
+.disc-list li:nth-child(5) { animation-delay: 0.10s; }
+.disc-list li:nth-child(6) { animation-delay: 0.12s; }
+.disc-list li:nth-child(7) { animation-delay: 0.14s; }
+.disc-list li:nth-child(8) { animation-delay: 0.16s; }
+.disc-list li:nth-child(9) { animation-delay: 0.18s; }
+.disc-list li:nth-child(10) { animation-delay: 0.20s; }
+.disc-list li:nth-child(n+11) { animation-delay: 0.22s; }
+/* ---- Loading bar ---- */
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  z-index: 999;
+  background: linear-gradient(90deg, var(--accent) 30%, var(--accent-secondary) 50%, var(--accent) 70%);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.loading-bar.active {
+  opacity: 1;
+  animation: loadingSlide 1.2s ease infinite;
+}
+@keyframes loadingSlide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ---- Refined loading dots ---- */
+.status.loading { position: relative; padding-left: 20px; }
+.status.loading::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 12px; height: 12px;
+  margin-top: -6px;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+/* ---- Reading progress ---- */
+.reading-progress {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 2px;
+  z-index: 1000;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.1s linear;
+  pointer-events: none;
+}
+
+/* ---- Toast notifications ---- */
+.toast-container {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--text);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateX(24px); }
+}
+
+/* ---- Keyboard shortcuts overlay ---- */
+.shortcuts-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 250;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.shortcuts-overlay.show { display: flex; }
+.shortcuts-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 24px 28px;
+  max-width: 380px;
+  width: 90%;
+}
+.shortcuts-panel h3 {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 0.8rem;
+}
+.shortcut-row .key {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-family: inherit;
+}
+.shortcut-row .desc {
+  color: var(--text-muted);
+}
+
+/* ---- Sort buttons ---- */
+.sort-btn {
+  display: inline-block;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  margin-left: 4px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+.sort-btn:hover { color: var(--accent); border-color: var(--border-subtle); }
+.sort-btn.active { color: var(--accent); border-color: var(--accent-subtle); font-weight: 500; }
+
+/* ---- Page toolbar ---- */
+.page-toolbar {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--card-shadow);
+}
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toolbar-row + .toolbar-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-subtle);
+}
+.toolbar-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.toolbar-title .group-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-emphasis);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.toolbar-title .group-count {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
+  font-family: inherit;
+}
+.btn-icon:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-subtle);
+  transform: translateY(-1px);
+}
+.btn-icon.fav-toggle.active {
+  color: var(--fav);
+  border-color: var(--fav);
+}
+.btn-icon.fav-toggle.active:hover {
+  color: var(--fav);
+  border-color: var(--fav);
+  box-shadow: 0 0 16px rgba(240,192,64,0.2);
+}
+.toolbar-sort {
+  justify-content: flex-start;
+}
+.sort-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+.sort-group {
+  display: inline-flex;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sort-group .sort-btn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 0;
+  margin: 0;
+}
+.sort-group .sort-btn:hover { color: var(--accent); background: var(--accent-subtle); }
+.sort-group .sort-btn.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 500;
+}
+
+/* ---- Respect reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="loading-bar" id="loadingBar"></div>
+<div class="reading-progress" id="readingProgress"></div>
+
+<header>
+  <div class="container header-inner">
+    <div class="brand">[ 豆瓣·组 ]</div>
+    <div class="input-row">
+      <input type="text" id="groupInput" placeholder="输入小组 ID 或关键词搜索..." autocomplete="off"
+        onkeydown="if(event.key==='Enter') searchOrLoad(this.value)">
+      <button class="btn btn-primary" onclick="searchOrLoad(document.getElementById('groupInput').value)">查看</button>
+    </div>
+    <button class="theme-btn" id="minimalToggle" onclick="toggleMinimalMode()" title="极简模式：图片需点击显示">◫</button>
+    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="切换主题">☀</button>
+  </div>
+</header>
+
+<div class="container">
+ <div class="status" id="status">
+   <span class="info">输入小组 ID（如 276160）按回车键浏览</span>
+ </div>
+</div>
+
+<main class="container">
+  <div class="fav-bar" id="favBar">
+    <div class="fav-card">
+      <span class="fav-label">★ 收藏<span class="fav-count" id="favCount">0</span></span>
+      <div class="fav-tags" id="favTags"></div>
+    </div>
+  </div>
+  <div id="app">
+    <!-- Welcome screen -->
+    <div class="welcome" id="welcome">
+      <div class="glyph">≡</div>
+      <p>豆瓣小组浏览器</p>
+      <p>输入小组 ID，浏览讨论帖</p>
+      <div class="hint">搜索"生活"、"读书"、"摄影"试试，或者直接看热门小组：</div>
+    <div id="recentGroups" class="recent-list"></div>
+      <div class="quick-nav" id="quickNav">
+        <button onclick="loadGroup('276160')">生活组</button>
+        <button onclick="loadGroup('480030')">知乎</button>
+        <button onclick="loadGroup('45749')">买书如山倒</button>
+        <button onclick="loadGroup('zuoxi')">怎么做</button>
+        <button onclick="loadGroup('38362')">上班这件事</button>
+        <button onclick="loadGroup('44712')">极简生活</button>
+        <button onclick="loadGroup('happywriters')">文字爱好者</button>
+        <button onclick="loadGroup('6555')">冷知识</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span style="position:absolute;top:16px;right:20px;color:#888;font-size:1.5rem;cursor:pointer;z-index:201;line-height:1;" onclick="event.stopPropagation();closeLightbox()">✕</span>
+  <img id="lightboxImg" src="" alt="" style="cursor:zoom-in">
+</div>
+
+<div class="float-actions" id="floatActions">
+  <div class="float-sub" id="floatSub">
+    <button type="button" class="float-btn" onclick="window.scrollTo(0,0)" title="返回顶部">↑</button>
+    <button type="button" class="float-btn" onclick="floatRefresh()" title="刷新">↻</button>
+    <button type="button" class="float-btn" onclick="floatBack()" title="返回">←</button>
+  </div>
+  <button type="button" class="float-btn float-more" id="floatMore" onclick="toggleFloatMenu()" title="更多操作">⋮</button>
+</div>
+
+<footer>
+  <div class="container">豆瓣小组 · 通过代理获取数据 · v<span id="version">1.0.1</span></div>
+</footer>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+const app = $('#app');
+const status = $('#status');
+const APP_VERSION = '1.0.1';
+var _isHistoryRestore = false;
+
+function setStatus(msg, type) {
+  status.className = 'status' + (type ? ' ' + type : '');
+  status.innerHTML = msg;
+  if (!type || type !== 'loading') hideLoading();
+}
+
+function loading(msg) {
+  setStatus(`<span class="loading-dots">${msg}<span>.</span><span>.</span><span>.</span></span>`, 'loading');
+  showLoading();
+}
+
+function showLoading() {
+  var bar = document.getElementById('loadingBar');
+  if (bar) bar.classList.add('active');
+}
+function hideLoading() {
+  var bar = document.getElementById('loadingBar');
+  if (bar) bar.classList.remove('active');
+}
+
+// ---- Navigation helpers ----
+
+function showGroups(groups) {
+  const welcome = $('#welcome');
+  if (welcome) welcome.style.display = 'none';
+
+  if (!groups || groups.length === 0) {
+    app.innerHTML = '<div class="section-title">没有找到小组</div>';
+    return;
+  }
+
+  let html = '<div class="section-title">推荐小组</div><ul class="group-list">';
+  for (const g of groups) {
+    html += `<li><a href="#" onclick="loadGroup('${g.id}'); return false;">${escapeHtml(g.name)} <span class="group-id">${g.id}</span></a></li>`;
+  }
+  html += '</ul>';
+  app.innerHTML = html;
+}
+
+function showDiscussions(groupId, data) {
+  const welcome = $('#welcome');
+  if (welcome) welcome.style.display = 'none';
+
+  selectedGroupId = groupId;
+  discussionCache[groupId] = data;
+
+  const name = data.groupName || `小组 ${groupId}`;
+  const list = data.discussions || [];
+  const groupLink = `https://www.douban.com/group/${groupId}/`;
+  const fav = isFavorited(groupId);
+
+  let html = '<div class="page-toolbar">';
+  html += '<div class="toolbar-row">';
+  html += `<a href="#" onclick="showWelcome(); return false;" class="btn-icon" title="\u8fd4\u56de\u9996\u9875">\u2190</a>`;
+  html += '<div class="toolbar-title"><span class="group-name">' + escapeHtml(name) + '</span><span class="group-count">' + list.length + ' \u4e2a\u8ba8\u8bba</span></div>';
+  html += '<div class="toolbar-actions">';
+  html += `<a href="${groupLink}" target="_blank" rel="noopener" class="btn-icon" title="\u5728\u8c46\u74e3\u6253\u5f00\u539f\u5e16">\u2197</a>`;
+  html += `<button class="btn-icon" onclick="loadGroup('${groupId}')" title="\u5237\u65b0">\u21bb</button>`;
+  html += `<button class="btn-icon fav-toggle${fav ? ' active' : ''}" onclick="toggleFavorite('${groupId}')" title="${fav ? '\u53d6\u6d88\u6536\u85cf' : '\u6536\u85cf'}">${fav ? '\u2605' : '\u2606'}</button>`;
+  html += '</div></div>';
+  html += '<div class="toolbar-row toolbar-sort">';
+  html += '<span class="sort-label">\u6392\u5e8f</span>';
+  html += '<div class="sort-group">';
+  html += `<button data-sort="reply" class="sort-btn${(!list._sortMode || list._sortMode === 'reply') ? ' active' : ''}" onclick="sortDiscussions('${groupId}', 'reply')" title="\u6309\u6700\u540e\u56de\u590d\u65f6\u95f4\u6392\u5e8f">\u6309\u56de\u590d</button>`;
+  html += `<button data-sort="create" class="sort-btn${list._sortMode === 'create' ? ' active' : ''}" onclick="sortDiscussions('${groupId}', 'create')" title="\u6309\u53d1\u5e16\u65f6\u95f4\u6392\u5e8f">\u6309\u53d1\u5e16</button>`;
+  html += '</div></div></div>';
+
+  if (!_isHistoryRestore) history.pushState({view:'group', groupId:groupId}, '');
+  _isHistoryRestore = false;
+
+  if (list.length === 0) {
+    html += '<div style="padding:30px 0;text-align:center;color:var(--text-muted);font-size:0.8rem;">暂无讨论内容</div>';
+    app.innerHTML = html;
+    return;
+  }
+
+  discussionFullData[groupId] = list;
+  if (!list._sortMode) list._sortMode = 'reply';
+  if (list._sortMode === 'create') {
+    list.sort(function(a,b) { return (b.createTime||'').localeCompare(a.createTime||''); });
+  } else {
+    list.sort(function(a,b) { return (b.lastReply||'').localeCompare(a.lastReply||''); });
+  }
+  var initVc = _savedVc > 0 ? _savedVc : Math.min(30, list.length);
+  list._vc = initVc;
+  _savedVc = 0;
+
+  html += '<div class="disc-search-wrap"><input class="disc-search" type="text" placeholder="\u641c\u7d22\u5e16\u5b50\u6807\u9898..." onkeyup="filterDiscussions(this.value)"></div>';
+  html += '<ul class="disc-list">';
+  var _limit = list._vc;
+  for (var i = 0; i < _limit; i++) {
+    var d = list[i];
+    var title = escapeHtml(d.title);
+    var author = escapeHtml(d.author || '匿名');
+    var replies = d.replies || '0';
+    var time = escapeHtml(d.lastReply || '');
+
+    html += `<li class="disc-item${isRead(groupId, d.id) ? ' read' : ''}" onclick="loadPost('${groupId}', '${d.id}');" style="content-visibility:auto;contain-intrinsic-size:80px;">`;
+    html += `<div class="title"><a href="#" onclick="event.stopPropagation(); loadPost('${groupId}', '${d.id}'); return false;">${title}</a></div>`;
+    html += `<div class="meta"><span class="author">${author}</span><span class="replies">${replies} 回复</span>`;
+    if (time) html += `<span>${time}</span>`;
+    html += '</div></li>';
+  }
+  html += '</ul>';
+  list._hasMore = list._vc < list.length;
+
+  app.innerHTML = html;
+  if (_savedScrollY > 0) {
+    var _sy = _savedScrollY;
+    _savedScrollY = 0;
+    setTimeout(function() { window.scrollTo(0, _sy); }, 15);
+  }
+}
+
+function showPost(groupId, data) {
+  const title = escapeHtml(data.title || '无标题');
+  const author = escapeHtml(data.author || '匿名');
+  const content = escapeHtml(data.content || '（内容为空）');
+  const comments = data.comments || [];
+  const images = data.images || [];
+
+  let html = '<div class="page-toolbar"><div class="toolbar-row">';
+  html += `<a href="#" onclick="if(discussionCache['${groupId}']){showDiscussions('${groupId}', discussionCache['${groupId}'])}else{loadGroup('${groupId}')} return false;" class="btn-icon" title="\u8fd4\u56de\u5217\u8868">\u2190</a>`;
+  html += '<div class="toolbar-title"><span class="group-name">\u5e16\u5b50\u8be6\u60c5</span></div>';
+  html += '</div></div>';
+  html += '<div class="post-header">';
+  html += `<h2>${title}</h2>`;
+  html += `<div class="meta"><span>${author}</span><span>${comments.length} 条回应</span>`;
+  if (images.length > 0) html += `<span>${images.length} 张图片</span>`;
+  if (!_isHistoryRestore && selectedPostId) history.pushState({view:'post', groupId:groupId, postId:selectedPostId}, '');
+  _isHistoryRestore = false;
+  if (data.createTime) html += `<span>${escapeHtml(data.createTime)}</span>`;
+  html += '</div></div>';
+  html += '<div class="post-search-wrap"><input class="post-search" type="text" placeholder="\u5728\u672c\u5e16\u641c\u7d22..." onkeyup="searchInPost(this.value)" id="postSearchInput"><span id="postSearchCount" style="color:var(--text-muted);font-size:0.7rem;margin-left:6px;"></span></div>';
+
+  // Image gallery
+  if (images.length > 0) {
+    html += '<div class="image-gallery">';
+  for (const imgUrl of images) {
+      html += `<a href="#" onclick="event.preventDefault();openImg(this)">` + imgBoxHtml(imgUrl, imgUrl, '帖子图片', 'placeholder') + '</a>';
+   }
+    html += '</div>';
+  }
+
+  html += `<div class="post-body">${content}</div>`;
+
+  if (comments.length > 0) {
+    _postComments = comments;
+    var _cvc = Math.min(30, comments.length);
+    comments._vc = _cvc;
+    html += '<div class="comments-section"><h3>回应 · <span id="commentCount">' + _cvc + '</span> / ' + comments.length + '</h3>';
+    for (var i = 0; i < _cvc; i++) {
+      var c = comments[i];
+      var ca = escapeHtml(c.author || '匿名');
+      var cc = escapeHtml(c.content);
+      var ct = escapeHtml(c.time || '');
+      html += '<div class="comment">';
+      html += `<div class="author"><span class="floor">#${i+1}</span> ${ca}${ct ? '<span class="time">' + ct + '</span>' : ''}</div>`;
+      html += `<div class="content">${cc}`;
+      if (c.images && c.images.length) {
+        html += '<div class="comment-imgs">';
+        for (var k = 0; k < c.images.length; k++) {
+          var cu = c.images[k];
+          html += `<a href="#" onclick="event.preventDefault();openImg(this)">` + imgBoxHtml(cu, cu, '评论图片', 'hide') + '</a>';
+        }
+        html += '</div>';
+      }
+      html += '</div></div>';
+    }
+    html += '</div>';
+    if (_cvc < comments.length) {
+      // sentinel removed, using scroll check
+    }
+  } else if (data.commentsLocked) {
+    html += '<div class="comment-locked">评论被豆瓣风控拦截，请稍后再试</div>';
+  } else {
+    html += '<div style="padding:20px 0;color:var(--text-muted);font-size:0.8rem;text-align:center;">暂无回应</div>';
+  }
+
+  app.innerHTML = html;
+  window.scrollTo(0, 0);
+}
+
+function showWelcome() {
+  const welcome = document.getElementById('welcome');
+  if (welcome) {
+    welcome.style.display = 'block';
+    app.innerHTML = '';
+    document.getElementById('groupInput').value = '';
+    setStatus('<span class="info">输入小组 ID 或关键词搜索，按回车</span>');
+    return;
+  }
+  location.reload();
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML.replace(/"/g, '&quot;');
+}
+
+// ---- Cache & state ----
+let discussionCache = {};
+let selectedGroupId = '';
+let selectedPostId = '';
+var discussionFullData = {};
+var _savedVc = 0;
+var _savedScrollY = 0;
+
+
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem('douban_fav_groups') || '[]'); }
+  catch { return []; }
+}
+function saveFavorites(favs) {
+  localStorage.setItem('douban_fav_groups', JSON.stringify(favs));
+}
+// ---- Server-synced favorites (shared across browsers) ----
+// localStorage is per-browser; pushing to the server lets every browser
+// and device see the same favorites. Failures are silent: local-only mode.
+function pushFavoritesToServer() {
+  try {
+    fetch('/api/favs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ favs: getFavorites() }),
+    }).catch(function() {});
+  } catch (e) {}
+}
+function syncFavoritesFromServer() {
+  try {
+    fetch('/api/favs').then(function(r) { return r.json(); }).then(function(j) {
+      if (!j || !j.ok || !Array.isArray(j.favs)) return;
+      // Merge: server list ∪ local list (by id), keep server names.
+      var local = getFavorites();
+      var merged = j.favs.slice();
+      for (var i = 0; i < local.length; i++) {
+        if (!merged.some(function(f) { return f.id === local[i].id; })) merged.push(local[i]);
+      }
+      saveFavorites(merged);
+      pushFavoritesToServer();
+      renderFavorites();
+      updateFavButton();
+    }).catch(function() {});
+  } catch (e) {}
+}
+function updateFavButton() {
+  if (!selectedGroupId) return;
+  var btn = document.querySelector('.fav-toggle');
+  if (!btn) return;
+  var fav = isFavorited(selectedGroupId);
+  btn.classList.toggle('active', fav);
+  btn.textContent = fav ? '★' : '☆';
+  btn.title = fav ? '取消收藏' : '收藏';
+}
+function isFavorited(groupId) {
+  return getFavorites().some(f => f.id === groupId);
+}
+function renderFavorites() {
+  const favs = getFavorites();
+  const bar = document.getElementById('favBar');
+  const count = document.getElementById('favCount');
+  const tags = document.getElementById('favTags');
+  if (!bar || !tags) return;
+  if (favs.length === 0) {
+    bar.classList.remove('show');
+    if (count) count.textContent = '0';
+    return;
+  }
+  bar.classList.add('show');
+  if (count) count.textContent = favs.length;
+  tags.innerHTML = favs.map(f =>
+    `<span class="fav-tag" onclick="loadGroup('${f.id}')">${escapeHtml(f.name)}<button class="fav-del" onclick="event.stopPropagation();removeFavorite('${f.id}')" title="取消收藏">×</button></span>`
+  ).join('');
+}
+
+
+// ---- Recent groups ----
+function getRecentGroups() {
+  try { return JSON.parse(localStorage.getItem('douban_recent_groups') || '[]'); }
+  catch { return []; }
+}
+function saveRecentGroup(id, name) {
+  let recents = getRecentGroups();
+  recents = recents.filter(function(r) { return r.id !== id; });
+  recents.unshift({ id: id, name: name, time: new Date().toLocaleString('zh-CN') });
+  if (recents.length > 8) recents.length = 8;
+  localStorage.setItem('douban_recent_groups', JSON.stringify(recents));
+}
+function renderRecentGroups() {
+  var el = document.getElementById('recentGroups');
+  if (!el) return;
+  var recents = getRecentGroups();
+  if (recents.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = recents.map(function(r) {
+    return '<span class="recent-tag" onclick="loadGroup(\'' + r.id + '\')">' + escapeHtml(r.name) + '</span>';
+  }).join('');
+}
+
+// ---- Read posts ----
+function getReadPosts(groupId) {
+  try { return JSON.parse(localStorage.getItem('douban_read_' + groupId) || '[]'); }
+  catch { return []; }
+}
+function markRead(groupId, postId) {
+  if (!groupId || !postId) return;
+  var read = getReadPosts(groupId);
+  if (read.indexOf(postId) === -1) {
+    read.push(postId);
+    localStorage.setItem('douban_read_' + groupId, JSON.stringify(read));
+  }
+}
+function isRead(groupId, postId) {
+  return getReadPosts(groupId).indexOf(postId) !== -1;
+}
+
+// ---- Filter discussions ----
+
+
+// ---- Auto-load more on scroll ----
+var _postComments = [];
+
+function loadMoreDiscussions() {
+  var gid = selectedGroupId;
+  var list = discussionFullData[gid];
+  if (!list) return;
+  var cur = list._vc || 30;
+  var next = Math.min(cur + 30, list.length);
+  if (next <= cur) return;
+  list._vc = next;
+
+  var ul = document.querySelector('.disc-list');
+  if (!ul) return;
+
+  for (var i = cur; i < next; i++) {
+    var d = list[i];
+    var title = escapeHtml(d.title);
+    var author = escapeHtml(d.author || '匿名');
+    var replies = d.replies || '0';
+    var time = escapeHtml(d.lastReply || '');
+    var li = '<li class="disc-item' + (isRead(gid, d.id) ? ' read' : '') + '" onclick="loadPost(\'' + gid + '\', \'' + d.id + '\');">';
+    li += '<div class="title"><a href="#" onclick="event.stopPropagation(); loadPost(\'' + gid + '\', \'' + d.id + '\'); return false;">' + title + '</a></div>';
+    li += '<div class="meta"><span class="author">' + author + '</span><span class="replies">' + replies + ' \u56de\u590d</span>';
+    if (time) li += '<span>' + time + '</span>';
+    li += '</div></li>';
+    ul.insertAdjacentHTML('beforeend', li);
+  }
+
+  // sentinel removed
+}
+
+function loadMoreComments() {
+  var comments = _postComments;
+  if (!comments || !comments.length) return;
+  var cur = comments._vc || 30;
+  var next = Math.min(cur + 30, comments.length);
+  if (next <= cur) return;
+  comments._vc = next;
+
+  var section = document.querySelector('.comments-section');
+  if (!section) return;
+
+  for (var i = cur; i < next; i++) {
+    var c = comments[i];
+    var ca = escapeHtml(c.author || '匿名');
+    var cc = escapeHtml(c.content);
+    var ct = escapeHtml(c.time || '');
+    var div = '<div class="comment">';
+    div += '<div class="author"><span class="floor">#' + (i+1) + '</span> ' + ca + (ct ? '<span class="time">' + ct + '</span>' : '') + '</div>';
+    div += '<div class="content">' + cc;
+    if (c.images && c.images.length) {
+      div += '<div class="comment-imgs">';
+      for (var k = 0; k < c.images.length; k++) {
+        var cu = c.images[k];
+        div += '<a href="#" onclick="event.preventDefault();openImg(this)">' + imgBoxHtml(cu, cu, '评论图片', 'hide') + '</a>';
+      }
+      div += '</div>';
+    }
+    div += '</div></div>';
+    section.insertAdjacentHTML('beforeend', div);
+  }
+
+  var ccEl = document.getElementById('commentCount');
+  if (ccEl) ccEl.textContent = next;
+
+  // sentinel removed
+}
+
+
+function sortDiscussions(gid, mode) {
+  var list = discussionFullData[gid];
+  if (!list) return;
+  list._sortMode = mode;
+  list.sort(function(a, b) {
+    if (mode === 'create') {
+      return (b.createTime||'').localeCompare(a.createTime||'');
+    }
+    return (b.lastReply||'').localeCompare(a.lastReply||'');
+  });
+  list._vc = Math.min(30, list.length);
+  _savedVc = 0;
+  _savedScrollY = 0;
+
+  var ul = document.querySelector('.disc-list');
+  if (!ul) return;
+  var html = '<ul class="disc-list">';
+  for (var i = 0; i < list._vc; i++) {
+    var d = list[i];
+    var title = escapeHtml(d.title);
+    var author = escapeHtml(d.author || '\u533f\u540d');
+    var replies = d.replies || '0';
+    var time = escapeHtml(d.lastReply || '');
+    html += `<li class="disc-item${isRead(gid, d.id) ? ' read' : ''}" onclick="loadPost('${gid}', '${d.id}');">`;
+    html += '<div class="title"><a href="#" onclick="event.stopPropagation(); loadPost(\'' + gid + '\', \'' + d.id + '\'); return false;">' + title + '</a></div>';
+    html += '<div class="meta"><span class="author">' + author + '</span><span class="replies">' + replies + ' \u56de\u590d</span>';
+    if (time) html += '<span>' + time + '</span>';
+    html += '</div></li>';
+  }
+  html += '</ul>';
+  ul.outerHTML = html;
+
+  var btns = document.querySelectorAll('[data-sort]');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].dataset.sort === mode);
+  }
+
+  window.scrollTo(0, 0);
+}
+
+function filterDiscussions(q) {
+  var items = document.querySelectorAll('.disc-item');
+  var t = q.trim().toLowerCase();
+  for (var i = 0; i < items.length; i++) {
+    var titleEl = items[i].querySelector('.title');
+    var title = titleEl ? titleEl.textContent.toLowerCase() : '';
+    items[i].style.display = (!t || title.indexOf(t) !== -1) ? '' : 'none';
+  }
+}
+
+// ---- Search in post ----
+function searchInPost(q) {
+  var body = document.querySelector('.post-body');
+  if (!body) return;
+  var countEl = document.getElementById('postSearchCount');
+  if (!q.trim()) {
+    if (body.dataset.original) body.innerHTML = body.dataset.original;
+    delete body.dataset.original;
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  body.dataset.original = body.dataset.original || body.innerHTML;
+  var text = body.dataset.original;
+  var escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var regex = new RegExp('(' + escaped + ')', 'gi');
+  var matches = text.match(regex);
+  body.innerHTML = text.replace(regex, '<mark>$1</mark>');
+  if (countEl) countEl.textContent = matches ? '\u627e\u5230 ' + matches.length + ' \u5904' : '\u65e0\u5339\u914d';
+}
+
+// ---- Floating actions ----
+
+function showToast(msg) {
+  var ct = document.getElementById('toastContainer');
+  if (!ct) return;
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  ct.appendChild(t);
+  setTimeout(function() { if (t.parentNode) t.remove(); }, 2600);
+}
+
+function floatBack() {
+  const post = document.querySelector('.post-header');
+  if (post && selectedGroupId && discussionCache[selectedGroupId]) {
+    showDiscussions(selectedGroupId, discussionCache[selectedGroupId]);
+  } else if (selectedGroupId) {
+    showWelcome();
+  }
+}
+function floatRefresh() {
+ const post = document.querySelector('.post-header');
+ if (post && selectedPostId) loadPost(selectedGroupId, selectedPostId);
+ else if (selectedGroupId) loadGroup(selectedGroupId);
+}
+// ---- Collapsible float menu (⋮ expands to back / refresh / scroll-top) ----
+function collapseFloatMenu() {
+  const fa = document.getElementById('floatActions');
+  const more = document.getElementById('floatMore');
+  if (!fa || !more) return;
+  fa.classList.remove('expanded');
+  more.textContent = '⋮';
+  more.title = '更多操作';
+}
+function toggleFloatMenu() {
+  const fa = document.getElementById('floatActions');
+  const more = document.getElementById('floatMore');
+  if (!fa || !more) return;
+  const exp = fa.classList.toggle('expanded');
+  more.textContent = exp ? '✕' : '⋮';
+  more.title = exp ? '收起' : '更多操作';
+}
+// While the menu is expanded, a click outside it only collapses the menu
+// (capture phase intercepts the event before the clicked element's own
+// handler runs, so no accidental navigation); a click on an action button
+// collapses first, then the button's handler executes as usual.
+document.addEventListener('click', function(e) {
+  const fa = document.getElementById('floatActions');
+  if (!fa || !fa.classList.contains('expanded')) return;
+  const more = document.getElementById('floatMore');
+  if (more && more.contains(e.target)) return; // ⋮ itself is handled by toggleFloatMenu
+  if (fa.contains(e.target)) { collapseFloatMenu(); return; }
+  e.preventDefault();
+  e.stopPropagation();
+  collapseFloatMenu();
+}, true);
+
+function showZoomIndicator(text) {
+  var el = document.getElementById('zoomIndicator');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'zoomIndicator';
+    el.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);color:#bbb;font-size:0.8rem;background:rgba(0,0,0,0.6);padding:4px 12px;border-radius:4px;z-index:300;transition:opacity 0.3s;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.opacity = '1';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function() { el.style.opacity = '0'; }, 800);
+}
+
+// ---- Minimal mode: images only load on click ----
+function isMinimalMode() {
+  try { return localStorage.getItem('douban_minimal_mode') === '1'; } catch (e) { return false; }
+}
+function toggleMinimalMode() {
+  var on = !isMinimalMode();
+  try { localStorage.setItem('douban_minimal_mode', on ? '1' : '0'); } catch (e) {}
+  applyMinimalMode();
+  var btn = document.getElementById('minimalToggle');
+  if (btn) btn.classList.toggle('active', on);
+  showToast(on ? '极简模式：图片需点击显示' : '已退出极简模式');
+}
+function applyMinimalMode() {
+  var on = isMinimalMode();
+  document.body.classList.toggle('minimal-mode', on);
+  var boxes = document.querySelectorAll('.img-box');
+  for (var i = 0; i < boxes.length; i++) {
+    var box = boxes[i];
+    var img = box.querySelector('img');
+    if (on && img) {
+      box.dataset.url = img.dataset.url || img.getAttribute('src') || '';
+      box.dataset.fb = img.dataset.fb || '';
+      box.dataset.alt = img.getAttribute('alt') || '图片';
+      box.dataset.fail = box.dataset.fail || 'placeholder';
+      box.innerHTML = '<span class="img-ph-label">🖼 点击显示图片</span>';
+      box.classList.add('ph');
+      box.classList.remove('revealed');
+      box.onclick = function(e) { e.preventDefault(); e.stopPropagation(); revealImg(this); };
+    } else if (!on) {
+      box.onclick = null;
+      if (box.classList.contains('ph') && box.dataset.url) {
+        box.innerHTML = imgHtml(box.dataset.url, box.dataset.fb, box.dataset.alt || '图片', box.dataset.fail || 'placeholder');
+        box.classList.remove('ph');
+      }
+    }
+  }
+}
+function revealImg(box) {
+  if (!box || box.classList.contains('revealed')) return;
+  box.classList.add('revealed');
+  box.classList.remove('ph');
+  box.innerHTML = imgHtml(box.dataset.url, box.dataset.fb, box.dataset.alt || '图片', box.dataset.fail || 'placeholder');
+  // Clear the placeholder click handler so subsequent clicks bubble up to
+  // the wrapping <a> and open the lightbox (openImg).
+  box.onclick = null;
+  box.removeAttribute('onclick');
+}
+function imgHtml(url, fb, alt, failMode) {
+  var onerr = "if(!this.dataset.r){this.dataset.r=1;this.src=this.dataset.fb;this.referrerPolicy='no-referrer'}else if(!this.dataset.r2){this.dataset.r2=1;this.src=this.dataset.fb.indexOf('/raw/')>=0?this.dataset.fb.replace('/raw/','/l/'):this.dataset.fb}else{";
+  onerr += failMode === 'hide'
+    ? "this.parentElement.style.display='none'"
+    : "this.parentElement.innerHTML='<span style=color:var(--text-muted);font-size:0.75rem;padding:12px>⚠ 图片加载失败</span>'";
+  onerr += '}';
+  return '<img src="' + escapeHtml(url) + '" data-url="' + escapeHtml(url) + '" data-fb="' + escapeHtml(fb) + '" alt="' + escapeHtml(alt || '图片') + '" loading="lazy" onerror="' + onerr + '">';
+}
+function imgBoxHtml(url, fb, alt, failMode) {
+  var prox = '/api/image?url=' + encodeURIComponent(url);
+  var fail = failMode || 'placeholder';
+  if (isMinimalMode()) {
+    return '<span class="img-box ph" data-url="' + escapeHtml(prox) + '" data-fb="' + escapeHtml(url) + '" data-alt="' + escapeHtml(alt || '图片') + '" data-fail="' + fail + '" onclick="event.preventDefault();event.stopPropagation();revealImg(this)"><span class="img-ph-label">🖼 点击显示图片</span></span>';
+  }
+  return '<span class="img-box" data-fail="' + fail + '">' + imgHtml(prox, url, alt, fail) + '</span>';
+}
+function openImg(el) {
+  const img = el && el.tagName === 'IMG' ? el : (el ? el.querySelector('img') : null);
+  if (img && img.dataset.url) openLightbox(img.dataset.url);
+}
+function openLightbox(url) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightboxImg');
+  if (!lb || !img) return;
+  img.src = url;
+  lb._zoom = 1; lb._tx = 0; lb._ty = 0;
+  lb._drag = false;
+  img.style.transform = 'scale(1) translate(0px,0px)';
+  lb.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  function applyTransform() {
+    img.style.transform = 'scale(' + lb._zoom + ') translate(' + Math.round(lb._tx) + 'px,' + Math.round(lb._ty) + 'px)';
+  }
+
+  lb._onWheel = function(e) {
+    e.preventDefault();
+    var d = e.deltaY > 0 ? -0.1 : 0.1;
+    lb._zoom = Math.max(0.3, Math.min(5, lb._zoom + d));
+    applyTransform();
+    showZoomIndicator(Math.round(lb._zoom * 100) + '%');
+  };
+  lb.addEventListener('wheel', lb._onWheel, { passive: false });
+
+  // Drag to pan (only when zoomed in)
+  img.onmousedown = function(e) {
+    if (lb._zoom <= 1.05) return;
+    e.preventDefault();
+    lb._drag = true;
+    var sx = e.clientX - lb._tx * lb._zoom;
+    var sy = e.clientY - lb._ty * lb._zoom;
+    img.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+
+    document.onmousemove = function(ev) {
+      if (!lb._drag) return;
+      lb._tx = (ev.clientX - sx) / lb._zoom;
+      lb._ty = (ev.clientY - sy) / lb._zoom;
+      applyTransform();
+    };
+    document.onmouseup = function() {
+      lb._drag = false;
+      img.style.cursor = 'zoom-in';
+      document.body.style.userSelect = '';
+      document.onmousemove = null;
+      document.onmouseup = null;
+    };
+  };
+}
+function closeLightbox() {
+  const lb = document.getElementById('lightbox');
+  if (!lb) return;
+  lb.classList.remove('show');
+  document.body.style.overflow = '';
+  document.body.style.userSelect = '';
+  var img = document.getElementById('lightboxImg');
+  if (img) { img.onmousedown = null; img.style.cursor = ''; }
+  document.onmousemove = null;
+  document.onmouseup = null;
+  if (lb._onWheel) {
+    lb.removeEventListener('wheel', lb._onWheel);
+    delete lb._onWheel;
+  }
+  var zi = document.getElementById('zoomIndicator');
+  if (zi) zi.style.opacity = '0';
+}
+// Image fallback is handled by each <img>'s inline onerror (proxy -> direct
+// raw -> compressed l); a capture-phase handler here would pre-empt it and
+// break the chain, so none is registered.
+
+// ---- Keyboard shortcuts ----
+function isTypingTarget(e) {
+  var t = e.target;
+  return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var ov = document.getElementById('shortcutsOverlay');
+    if (ov && ov.classList.contains('show')) { ov.classList.remove('show'); return; }
+    closeLightbox();
+    return;
+  }
+  if (isTypingTarget(e) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === '?') {
+    var ov = document.getElementById('shortcutsOverlay');
+    if (ov) ov.classList.toggle('show');
+  } else if (e.key.toLowerCase() === 'b') {
+    floatBack();
+  } else if (e.key.toLowerCase() === 'r') {
+    floatRefresh();
+  } else if (e.key === '/') {
+    var s = document.querySelector('.disc-search, .post-search');
+    if (s) { e.preventDefault(); s.focus(); s.select(); }
+  }
+});
+document.addEventListener('scroll', function() {
+  const el = document.getElementById('floatActions');
+  if (!el) return;
+  // Float actions (back / refresh / scroll-to-top) only appear while the
+  // page is scrolled; at the top the toolbar provides the same actions.
+  el.classList.toggle('show', window.scrollY > 150);
+  if (window.scrollY <= 150) collapseFloatMenu();
+  var h = document.querySelector('header');
+  if (h) {
+    if (window.scrollY > 10) { h.classList.add('scrolled'); }
+    else { h.classList.remove('scrolled'); }
+  }
+
+  // Auto-load more discussions
+  if (selectedGroupId && discussionFullData[selectedGroupId]) {
+    var dl = discussionFullData[selectedGroupId];
+    if (dl._vc && dl._vc < dl.length && window.scrollY + window.innerHeight >= document.body.scrollHeight - 400) {
+      loadMoreDiscussions();
+    }
+  }
+
+  // Auto-load more comments
+  if (_postComments && _postComments.length) {
+    if (_postComments._vc && _postComments._vc < _postComments.length && window.scrollY + window.innerHeight >= document.body.scrollHeight - 400) {
+      loadMoreComments();
+    }
+  }
+});
+
+// ---- API calls ----
+
+async function searchOrLoad(value) {
+  value = value.trim();
+  if (!value) return;
+  // If it's all digits, treat as group ID
+  if (/^\d+$/.test(value)) {
+    loadGroup(value);
+  } else {
+    searchGroup(value);
+  }
+}
+
+async function searchGroup(keyword) {
+  document.getElementById('groupInput').value = keyword;
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.style.display = 'none';
+
+  loading(`正在搜索「${escapeHtml(keyword)}」`);
+
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}`);
+    const json = await res.json();
+
+    if (!json.ok || !json.results || json.results.length === 0) {
+      setStatus(`没有找到相关小组`, 'error');
+      app.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--text-muted);font-size:0.85rem;">没有找到相关小组，试试其他关键词</div>';
+      return;
+    }
+
+    setStatus(`找到 ${json.results.length} 个小组`);
+    let html = '<div class="section-title">搜索结果：' + escapeHtml(keyword) + '</div><ul class="group-list">';
+    for (const g of json.results) {
+      html += `<li><a href="#" onclick="loadGroup('${g.id}'); return false;">${escapeHtml(g.name)} <span class="group-id">${g.id}</span></a></li>`;
+    }
+    html += '</ul>';
+    app.innerHTML = html;
+  } catch (err) {
+    setStatus(`搜索失败: ${err.message}`, 'error');
+  }
+}
+
+async function loadGroup(id) {
+  _savedVc = 0;
+  _savedScrollY = 0;
+  id = id.trim();
+  if (!id) return;
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+    setStatus('无效的小组 ID', 'error');
+    return;
+  }
+
+  document.getElementById('groupInput').value = id;
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.style.display = 'none';
+
+  loading(`正在获取小组 ${escapeHtml(id)}`);
+
+  try {
+    const res = await fetch(`/api/group?id=${encodeURIComponent(id)}`);
+    const json = await res.json();
+
+    if (!json.ok) {
+      setStatus(`请求失败: ${json.error || '未知错误'}`, 'error');
+      app.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--error);font-size:0.8rem;">获取数据失败，请检查小组 ID 是否正确</div>';
+      return;
+    }
+
+    setStatus(`小组 ${escapeHtml(id)} · ${json.data.discussions.length} 个讨论`);
+    discussionCache[id] = json.data;
+    saveRecentGroup(id, json.data.groupName || `小组 ${id}`);
+    if (Object.keys(discussionCache).length > 30) {
+      delete discussionCache[Object.keys(discussionCache)[0]];
+    }
+    showDiscussions(id, json.data);
+  } catch (err) {
+    setStatus(`网络错误: ${err.message}`, 'error');
+    app.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--error);font-size:0.8rem;">无法连接到服务器</div>';
+  }
+}
+
+async function loadPost(groupId, postId) {
+  selectedPostId = postId;
+  if (groupId) selectedGroupId = groupId;
+  markRead(selectedGroupId, postId);
+  _savedScrollY = window.scrollY;
+  if (selectedGroupId && discussionFullData[selectedGroupId]) {
+    _savedVc = discussionFullData[selectedGroupId]._vc || 30;
+  }
+  loading(`正在获取帖子详情`);
+
+  try {
+    const res = await fetch(`/api/post?id=${encodeURIComponent(postId)}`);
+    const json = await res.json();
+
+    if (!json.ok) {
+      setStatus(`请求失败: ${json.error || '未知错误'}`, 'error');
+      return;
+    }
+
+    setStatus(`帖子: ${escapeHtml((json.data.title || '').substring(0, 40))}`);
+    showPost(groupId, json.data);
+  } catch (err) {
+    setStatus(`网络错误: ${err.message}`, 'error');
+  }
+}
+
+function toggleFavorite(groupId) {
+  const data = discussionCache[groupId];
+  if (!data) return;
+  const name = data.groupName || `小组 ${groupId}`;
+  let favs = getFavorites();
+  const idx = favs.findIndex(f => f.id === groupId);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    favs.push({ id: groupId, name });
+  }
+  saveFavorites(favs);
+  renderFavorites();
+  pushFavoritesToServer();
+  showToast(favs.some(function(f) { return f.id === groupId; }) ? '已收藏 ' + name : '已取消' + name);
+  if (selectedGroupId === groupId && discussionCache[groupId]) {
+    showDiscussions(groupId, discussionCache[groupId]);
+  }
+}
+
+// Remove a group from favorites (used by the × button on favorite tags).
+function removeFavorite(groupId) {
+  var favs = getFavorites();
+  var f = favs.find(function(x) { return x.id === groupId; });
+  var name = f ? f.name : ('小组 ' + groupId);
+  if (!confirm('确定取消收藏「' + name + '」吗？')) return;
+  favs = favs.filter(function(x) { return x.id !== groupId; });
+  saveFavorites(favs);
+  renderFavorites();
+  pushFavoritesToServer();
+  updateFavButton();
+  showToast('已取消收藏');
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  root.setAttribute('data-theme', next);
+  document.getElementById('themeToggle').textContent = next === 'dark' ? '☀' : '☾';
+  localStorage.setItem('douban_theme', next);
+}
+
+// ---- Hot groups on load ----
+window.addEventListener('popstate', function(e) {
+  var st = e.state;
+  if (!st) { showWelcome(); return; }
+  _isHistoryRestore = true;
+  if (st.view === 'group' && st.groupId) {
+    if (discussionCache[st.groupId]) { showDiscussions(st.groupId, discussionCache[st.groupId]); }
+    else { loadGroup(st.groupId); }
+  } else if (st.view === 'post' && st.groupId && st.postId) {
+    loadPost(st.groupId, st.postId);
+  } else {
+    showWelcome();
+  }
+});
+history.replaceState({view:'welcome'}, '');
+(async function init() {
+  const saved = localStorage.getItem('douban_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  const tb = document.getElementById('themeToggle');
+  if (tb) tb.textContent = saved === 'dark' ? '☀' : '☾';
+  try {
+    const res = await fetch('/api/hot');
+    const json = await res.json();
+    if (json.ok && json.results && json.results.length > 0) {
+      const nav = document.getElementById('quickNav');
+      if (nav) {
+        nav.innerHTML = json.results.slice(0, 12).map(g =>
+          `<button onclick="loadGroup('${g.id}')">${escapeHtml(g.name)}</button>`
+        ).join('');
+      }
+    }
+  } catch {}
+  renderFavorites();
+  // Minimal mode: restore body class and button state.
+  document.body.classList.toggle('minimal-mode', isMinimalMode());
+  var mBtn = document.getElementById('minimalToggle');
+  if (mBtn) mBtn.classList.toggle('active', isMinimalMode());
+  // Pull server-side favorites so all browsers share the same list.
+  syncFavoritesFromServer();
+})();
+</script>
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="shortcuts-overlay" id="shortcutsOverlay" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="shortcuts-panel">
+      <h3>快捷键</h3>
+      <div class="shortcut-row"><span class="key">?</span><span class="desc">显示/隐藏此面板</span></div>
+      <div class="shortcut-row"><span class="key">b</span><span class="desc">返回上一级</span></div>
+      <div class="shortcut-row"><span class="key">r</span><span class="desc">刷新当前</span></div>
+      <div class="shortcut-row"><span class="key">/</span><span class="desc">搜索帖子</span></div>
+      <div class="shortcut-row"><span class="key">Esc</span><span class="desc">关闭</span></div>
+    </div>
+  </div>
+</body>
+</html>
