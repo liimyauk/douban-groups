@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>豆瓣小组</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e16'/%3E%3Ccircle cx='25' cy='32' r='13' fill='%237ec8a0'/%3E%3Ccircle cx='40' cy='32' r='13' fill='%236ab0d6' fill-opacity='0.85'/%3E%3C/svg%3E">
 <style>
 :root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
   --bg: #0a0e16;
   --bg-elevated: #111;
   --bg-gradient-1: rgba(25,55,45,0.2);
@@ -76,7 +79,7 @@ body {
   background: var(--bg);
   background-image: radial-gradient(ellipse at 50% 0%, var(--bg-gradient-1) 0%, var(--bg) 65%),radial-gradient(ellipse at 80% 100%, var(--bg-gradient-2, transparent) 0%, transparent 50%);
   color: var(--text);
-  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  font-family: var(--font-sans);
   line-height: 1.6;
   min-height: 100vh;
   scroll-behavior: smooth;
@@ -93,6 +96,14 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 200px 200px;
+}
+
+/* Keep the monospace feel only for "data" elements (IDs, meta, labels,
+   keyboard keys) so long Chinese prose reads in a comfortable sans-serif. */
+.brand, .group-id, .meta, .comment .time, .comment .floor, .section-title,
+.sort-label, .status, .shortcut-row .key, .nav-path, .group-count,
+.replies, .fav-count, .sort-btn {
+  font-family: var(--font-mono);
 }
 
 /* ---- Scrollbar ---- */
@@ -121,10 +132,8 @@ header {
   position: sticky;
   top: 0;
   background: var(--header-bg);
-  backdrop-filter: blur(20px) saturate(1.1);
-  -webkit-backdrop-filter: blur(20px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
   z-index: 10;
 }
 .header-inner {
@@ -851,6 +860,24 @@ footer {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   border-radius: 4px;
 }
+.lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  color: #aaa;
+  font-size: 1.4rem;
+  cursor: pointer;
+  z-index: 202;
+  line-height: 1;
+  background: none;
+  border: none;
+  padding: 8px;
+  transition: color 0.15s, transform 0.15s;
+}
+.lightbox-close:hover {
+  color: #fff;
+  transform: scale(1.1);
+}
 
 
 /* ---- Animations ---- */
@@ -1140,6 +1167,103 @@ footer {
   font-weight: 500;
 }
 
+/* ---- Focus visibility (a11y) ---- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---- Empty states ---- */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+.empty-state .glyph {
+  font-size: 1.4rem;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  border-radius: 50%;
+  background: var(--accent-subtle);
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+.empty-state .empty-title {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.empty-state .empty-sub {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  margin-top: 6px;
+}
+
+/* ---- "Load more" progress indicator ---- */
+.list-more {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  padding: 14px 0 4px;
+  letter-spacing: 0.3px;
+}
+
+/* ---- Recent groups header + clear ---- */
+.recent-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+.recent-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.recent-clear {
+  background: none;
+  border: 1px solid var(--border-medium);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.recent-clear:hover {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/* ---- In-post search highlight: current match ---- */
+mark.current {
+  background: var(--fav);
+  color: #1a1400;
+  outline: 1px solid var(--fav);
+}
+
+/* ---- Lightbox image counter ---- */
+.lightbox-count {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ddd;
+  font-size: 0.75rem;
+  background: rgba(0,0,0,0.5);
+  padding: 3px 12px;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 201;
+}
+
 /* ---- Respect reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1163,8 +1287,9 @@ footer {
         onkeydown="if(event.key==='Enter') searchOrLoad(this.value)">
       <button class="btn btn-primary" onclick="searchOrLoad(document.getElementById('groupInput').value)">查看</button>
     </div>
-    <button class="theme-btn" id="minimalToggle" onclick="toggleMinimalMode()" title="极简模式：图片需点击显示">◫</button>
-    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="切换主题">☀</button>
+    <button class="theme-btn" id="minimalToggle" onclick="toggleMinimalMode()" title="极简模式：图片需点击显示" aria-label="切换极简模式" aria-pressed="false">◫</button>
+    <button class="theme-btn" id="helpBtn" onclick="toggleShortcuts()" title="快捷键帮助" aria-label="快捷键帮助">?</button>
+    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="切换到亮色主题" aria-label="切换主题" aria-pressed="false">☾</button>
   </div>
 </header>
 
@@ -1204,17 +1329,18 @@ footer {
 </main>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <span style="position:absolute;top:16px;right:20px;color:#888;font-size:1.5rem;cursor:pointer;z-index:201;line-height:1;" onclick="event.stopPropagation();closeLightbox()">✕</span>
+  <button type="button" class="lightbox-close" aria-label="关闭大图" onclick="event.stopPropagation();closeLightbox()">✕</button>
   <img id="lightboxImg" src="" alt="" style="cursor:zoom-in">
+  <div class="lightbox-count" id="lightboxCount"></div>
 </div>
 
 <div class="float-actions" id="floatActions">
   <div class="float-sub" id="floatSub">
-    <button type="button" class="float-btn" onclick="window.scrollTo(0,0)" title="返回顶部">↑</button>
-    <button type="button" class="float-btn" onclick="floatRefresh()" title="刷新">↻</button>
-    <button type="button" class="float-btn" onclick="floatBack()" title="返回">←</button>
+    <button type="button" class="float-btn" onclick="window.scrollTo(0,0)" title="返回顶部" aria-label="返回顶部">↑</button>
+    <button type="button" class="float-btn" onclick="floatRefresh()" title="刷新" aria-label="刷新">↻</button>
+    <button type="button" class="float-btn" onclick="floatBack()" title="返回" aria-label="返回">←</button>
   </div>
-  <button type="button" class="float-btn float-more" id="floatMore" onclick="toggleFloatMenu()" title="更多操作">⋮</button>
+  <button type="button" class="float-btn float-more" id="floatMore" onclick="toggleFloatMenu()" title="更多操作" aria-label="更多操作" aria-expanded="false">⋮</button>
 </div>
 
 <footer>
@@ -1251,21 +1377,47 @@ function hideLoading() {
 
 // ---- Navigation helpers ----
 
-function showGroups(groups) {
-  const welcome = $('#welcome');
-  if (welcome) welcome.style.display = 'none';
+// Shared renderer for a discussion list item, used by the initial render,
+// scroll-to-load-more and sort so `content-visibility` stays consistent.
+function discItemHtml(groupId, d) {
+  var title = escapeHtml(d.title);
+  var author = escapeHtml(d.author || '匿名');
+  var replies = d.replies || '0';
+  var time = escapeHtml(d.lastReply || '');
+  var html = `<li class="disc-item${isRead(groupId, d.id) ? ' read' : ''}" onclick="loadPost('${groupId}', '${d.id}');" style="content-visibility:auto;contain-intrinsic-size:80px;">`;
+  html += `<div class="title"><a href="#" onclick="event.stopPropagation(); loadPost('${groupId}', '${d.id}'); return false;">${title}</a></div>`;
+  html += `<div class="meta"><span class="author">${author}</span><span class="replies">${replies} 回复</span>`;
+  if (time) html += `<span>${time}</span>`;
+  html += '</div></li>';
+  return html;
+}
 
-  if (!groups || groups.length === 0) {
-    app.innerHTML = '<div class="section-title">没有找到小组</div>';
-    return;
+// Update the "已显示 X / Y" load-more hint under the discussion list.
+function updateListMore() {
+  var el = document.getElementById('listMore');
+  if (!el) return;
+  var list = discussionFullData[selectedGroupId];
+  if (!list) { el.textContent = ''; return; }
+  var cur = list._vc || 0;
+  if (cur < list.length) {
+    el.textContent = '已显示 ' + cur + ' / ' + list.length + ' 条 · 继续滚动加载…';
+  } else {
+    el.textContent = '已全部加载 · 共 ' + list.length + ' 条';
   }
+}
 
-  let html = '<div class="section-title">推荐小组</div><ul class="group-list">';
-  for (const g of groups) {
-    html += `<li><a href="#" onclick="loadGroup('${g.id}'); return false;">${escapeHtml(g.name)} <span class="group-id">${g.id}</span></a></li>`;
+// Update the comment count hint at the bottom of the comments section.
+function updateCommentMore() {
+  var el = document.getElementById('commentMore');
+  if (!el) return;
+  var comments = _postComments;
+  if (!comments || !comments.length) { el.textContent = ''; return; }
+  var cur = comments._vc || 0;
+  if (cur < comments.length) {
+    el.textContent = '已显示 ' + cur + ' / ' + comments.length + ' 条回应 · 继续滚动加载…';
+  } else {
+    el.textContent = '已加载全部 ' + comments.length + ' 条回应';
   }
-  html += '</ul>';
-  app.innerHTML = html;
 }
 
 function showDiscussions(groupId, data) {
@@ -1282,12 +1434,12 @@ function showDiscussions(groupId, data) {
 
   let html = '<div class="page-toolbar">';
   html += '<div class="toolbar-row">';
-  html += `<a href="#" onclick="showWelcome(); return false;" class="btn-icon" title="\u8fd4\u56de\u9996\u9875">\u2190</a>`;
+  html += `<a href="#" onclick="showWelcome(); return false;" class="btn-icon" title="\u8fd4\u56de\u9996\u9875" aria-label="\u8fd4\u56de\u9996\u9875">\u2190</a>`;
   html += '<div class="toolbar-title"><span class="group-name">' + escapeHtml(name) + '</span><span class="group-count">' + list.length + ' \u4e2a\u8ba8\u8bba</span></div>';
   html += '<div class="toolbar-actions">';
-  html += `<a href="${groupLink}" target="_blank" rel="noopener" class="btn-icon" title="\u5728\u8c46\u74e3\u6253\u5f00\u539f\u5e16">\u2197</a>`;
-  html += `<button class="btn-icon" onclick="loadGroup('${groupId}')" title="\u5237\u65b0">\u21bb</button>`;
-  html += `<button class="btn-icon fav-toggle${fav ? ' active' : ''}" onclick="toggleFavorite('${groupId}')" title="${fav ? '\u53d6\u6d88\u6536\u85cf' : '\u6536\u85cf'}">${fav ? '\u2605' : '\u2606'}</button>`;
+  html += `<a href="${groupLink}" target="_blank" rel="noopener" class="btn-icon" title="\u5728\u8c46\u74e3\u6253\u5f00\u539f\u5e16" aria-label="\u5728\u8c46\u74e3\u6253\u5f00\u539f\u5e16">\u2197</a>`;
+  html += `<button class="btn-icon" onclick="loadGroup('${groupId}')" title="\u5237\u65b0" aria-label="\u5237\u65b0">\u21bb</button>`;
+  html += `<button class="btn-icon fav-toggle${fav ? ' active' : ''}" onclick="toggleFavorite('${groupId}')" title="${fav ? '\u53d6\u6d88\u6536\u85cf' : '\u6536\u85cf'}" aria-label="${fav ? '\u53d6\u6d88\u6536\u85cf' : '\u6536\u85cf'}" aria-pressed="${fav}">${fav ? '\u2605' : '\u2606'}</button>`;
   html += '</div></div>';
   html += '<div class="toolbar-row toolbar-sort">';
   html += '<span class="sort-label">\u6392\u5e8f</span>';
@@ -1300,7 +1452,7 @@ function showDiscussions(groupId, data) {
   _isHistoryRestore = false;
 
   if (list.length === 0) {
-    html += '<div style="padding:30px 0;text-align:center;color:var(--text-muted);font-size:0.8rem;">暂无讨论内容</div>';
+    html += emptyState('☕', '暂无讨论内容', '这个小组还没有可显示的讨论');
     app.innerHTML = html;
     return;
   }
@@ -1320,22 +1472,14 @@ function showDiscussions(groupId, data) {
   html += '<ul class="disc-list">';
   var _limit = list._vc;
   for (var i = 0; i < _limit; i++) {
-    var d = list[i];
-    var title = escapeHtml(d.title);
-    var author = escapeHtml(d.author || '匿名');
-    var replies = d.replies || '0';
-    var time = escapeHtml(d.lastReply || '');
-
-    html += `<li class="disc-item${isRead(groupId, d.id) ? ' read' : ''}" onclick="loadPost('${groupId}', '${d.id}');" style="content-visibility:auto;contain-intrinsic-size:80px;">`;
-    html += `<div class="title"><a href="#" onclick="event.stopPropagation(); loadPost('${groupId}', '${d.id}'); return false;">${title}</a></div>`;
-    html += `<div class="meta"><span class="author">${author}</span><span class="replies">${replies} 回复</span>`;
-    if (time) html += `<span>${time}</span>`;
-    html += '</div></li>';
+    html += discItemHtml(groupId, list[i]);
   }
   html += '</ul>';
+  html += '<div class="list-more" id="listMore"></div>';
   list._hasMore = list._vc < list.length;
 
   app.innerHTML = html;
+  updateListMore();
   if (_savedScrollY > 0) {
     var _sy = _savedScrollY;
     _savedScrollY = 0;
@@ -1349,9 +1493,10 @@ function showPost(groupId, data) {
   const content = escapeHtml(data.content || '（内容为空）');
   const comments = data.comments || [];
   const images = data.images || [];
+  _postComments = comments;
 
   let html = '<div class="page-toolbar"><div class="toolbar-row">';
-  html += `<a href="#" onclick="if(discussionCache['${groupId}']){showDiscussions('${groupId}', discussionCache['${groupId}'])}else{loadGroup('${groupId}')} return false;" class="btn-icon" title="\u8fd4\u56de\u5217\u8868">\u2190</a>`;
+  html += `<a href="#" onclick="appBack(); return false;" class="btn-icon" title="\u8fd4\u56de\u5217\u8868" aria-label="\u8fd4\u56de\u5217\u8868">\u2190</a>`;
   html += '<div class="toolbar-title"><span class="group-name">\u5e16\u5b50\u8be6\u60c5</span></div>';
   html += '</div></div>';
   html += '<div class="post-header">';
@@ -1362,7 +1507,12 @@ function showPost(groupId, data) {
   _isHistoryRestore = false;
   if (data.createTime) html += `<span>${escapeHtml(data.createTime)}</span>`;
   html += '</div></div>';
-  html += '<div class="post-search-wrap"><input class="post-search" type="text" placeholder="\u5728\u672c\u5e16\u641c\u7d22..." onkeyup="searchInPost(this.value)" id="postSearchInput"><span id="postSearchCount" style="color:var(--text-muted);font-size:0.7rem;margin-left:6px;"></span></div>';
+  html += '<div class="post-search-wrap">';
+  html += '<input class="post-search" type="text" placeholder="\u5728\u672c\u5e16\u641c\u7d22..." onkeyup="searchInPost(this.value)" id="postSearchInput" aria-label="\u5728\u672c\u5e16\u641c\u7d22">';
+  html += '<button type="button" class="btn btn-sm" onclick="postMatchPrev()" title="\u4e0a\u4e00\u5904" aria-label="\u4e0a\u4e00\u5904">\u2191</button>';
+  html += '<button type="button" class="btn btn-sm" onclick="postMatchNext()" title="\u4e0b\u4e00\u5904" aria-label="\u4e0b\u4e00\u5904">\u2193</button>';
+  html += '<span id="postSearchCount" style="color:var(--text-muted);font-size:0.7rem;margin-left:6px;"></span>';
+  html += '</div>';
 
   // Image gallery
   if (images.length > 0) {
@@ -1376,7 +1526,6 @@ function showPost(groupId, data) {
   html += `<div class="post-body">${content}</div>`;
 
   if (comments.length > 0) {
-    _postComments = comments;
     var _cvc = Math.min(30, comments.length);
     comments._vc = _cvc;
     html += '<div class="comments-section"><h3>回应 · <span id="commentCount">' + _cvc + '</span> / ' + comments.length + '</h3>';
@@ -1398,17 +1547,16 @@ function showPost(groupId, data) {
       }
       html += '</div></div>';
     }
+    html += '<div class="list-more" id="commentMore"></div>';
     html += '</div>';
-    if (_cvc < comments.length) {
-      // sentinel removed, using scroll check
-    }
   } else if (data.commentsLocked) {
     html += '<div class="comment-locked">评论被豆瓣风控拦截，请稍后再试</div>';
   } else {
-    html += '<div style="padding:20px 0;color:var(--text-muted);font-size:0.8rem;text-align:center;">暂无回应</div>';
+    html += emptyState('💬', '暂无回应', '还没有人回应这个帖子');
   }
 
   app.innerHTML = html;
+  updateCommentMore();
   window.scrollTo(0, 0);
 }
 
@@ -1425,10 +1573,21 @@ function showWelcome() {
 }
 
 function escapeHtml(s) {
-  if (!s) return '';
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML.replace(/"/g, '&quot;');
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function emptyState(icon, title, sub) {
+  return '<div class="empty-state">' +
+    '<div class="glyph">' + (icon || '∅') + '</div>' +
+    (title ? '<p class="empty-title">' + title + '</p>' : '') +
+    (sub ? '<p class="empty-sub">' + sub + '</p>' : '') +
+    '</div>';
 }
 
 // ---- Cache & state ----
@@ -1524,9 +1683,16 @@ function renderRecentGroups() {
   if (!el) return;
   var recents = getRecentGroups();
   if (recents.length === 0) { el.innerHTML = ''; return; }
-  el.innerHTML = recents.map(function(r) {
+  var html = '<div class="recent-row"><span class="recent-label">最近浏览</span><button class="recent-clear" onclick="clearRecent()">清除</button></div>';
+  html += recents.map(function(r) {
     return '<span class="recent-tag" onclick="loadGroup(\'' + r.id + '\')">' + escapeHtml(r.name) + '</span>';
   }).join('');
+  el.innerHTML = html;
+}
+function clearRecent() {
+  try { localStorage.removeItem('douban_recent_groups'); } catch (e) {}
+  renderRecentGroups();
+  showToast('已清空最近浏览');
 }
 
 // ---- Read posts ----
@@ -1564,21 +1730,12 @@ function loadMoreDiscussions() {
   var ul = document.querySelector('.disc-list');
   if (!ul) return;
 
+  var html = '';
   for (var i = cur; i < next; i++) {
-    var d = list[i];
-    var title = escapeHtml(d.title);
-    var author = escapeHtml(d.author || '匿名');
-    var replies = d.replies || '0';
-    var time = escapeHtml(d.lastReply || '');
-    var li = '<li class="disc-item' + (isRead(gid, d.id) ? ' read' : '') + '" onclick="loadPost(\'' + gid + '\', \'' + d.id + '\');">';
-    li += '<div class="title"><a href="#" onclick="event.stopPropagation(); loadPost(\'' + gid + '\', \'' + d.id + '\'); return false;">' + title + '</a></div>';
-    li += '<div class="meta"><span class="author">' + author + '</span><span class="replies">' + replies + ' \u56de\u590d</span>';
-    if (time) li += '<span>' + time + '</span>';
-    li += '</div></li>';
-    ul.insertAdjacentHTML('beforeend', li);
+    html += discItemHtml(gid, list[i]);
   }
-
-  // sentinel removed
+  ul.insertAdjacentHTML('beforeend', html);
+  updateListMore();
 }
 
 function loadMoreComments() {
@@ -1615,7 +1772,7 @@ function loadMoreComments() {
   var ccEl = document.getElementById('commentCount');
   if (ccEl) ccEl.textContent = next;
 
-  // sentinel removed
+  updateCommentMore();
 }
 
 
@@ -1637,16 +1794,7 @@ function sortDiscussions(gid, mode) {
   if (!ul) return;
   var html = '<ul class="disc-list">';
   for (var i = 0; i < list._vc; i++) {
-    var d = list[i];
-    var title = escapeHtml(d.title);
-    var author = escapeHtml(d.author || '\u533f\u540d');
-    var replies = d.replies || '0';
-    var time = escapeHtml(d.lastReply || '');
-    html += `<li class="disc-item${isRead(gid, d.id) ? ' read' : ''}" onclick="loadPost('${gid}', '${d.id}');">`;
-    html += '<div class="title"><a href="#" onclick="event.stopPropagation(); loadPost(\'' + gid + '\', \'' + d.id + '\'); return false;">' + title + '</a></div>';
-    html += '<div class="meta"><span class="author">' + author + '</span><span class="replies">' + replies + ' \u56de\u590d</span>';
-    if (time) html += '<span>' + time + '</span>';
-    html += '</div></li>';
+    html += discItemHtml(gid, list[i]);
   }
   html += '</ul>';
   ul.outerHTML = html;
@@ -1655,6 +1803,11 @@ function sortDiscussions(gid, mode) {
   for (var i = 0; i < btns.length; i++) {
     btns[i].classList.toggle('active', btns[i].dataset.sort === mode);
   }
+
+  // Re-apply any active title filter so sorting doesn't reset it.
+  var sf = document.querySelector('.disc-search');
+  if (sf && sf.value) filterDiscussions(sf.value);
+  updateListMore();
 
   window.scrollTo(0, 0);
 }
@@ -1669,24 +1822,70 @@ function filterDiscussions(q) {
   }
 }
 
-// ---- Search in post ----
+// ---- Search in post (accurate count + prev/next navigation) ----
+var _postSearchIdx = -1;
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function searchInPost(q) {
   var body = document.querySelector('.post-body');
-  if (!body) return;
   var countEl = document.getElementById('postSearchCount');
+  if (!body) return;
   if (!q.trim()) {
-    if (body.dataset.original) body.innerHTML = body.dataset.original;
-    delete body.dataset.original;
+    // Strip any existing <mark> wrappers by restoring the plain text.
+    if (body.querySelector('mark')) body.textContent = body.textContent;
+    _postSearchIdx = -1;
     if (countEl) countEl.textContent = '';
     return;
   }
-  body.dataset.original = body.dataset.original || body.innerHTML;
-  var text = body.dataset.original;
-  var escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  var regex = new RegExp('(' + escaped + ')', 'gi');
-  var matches = text.match(regex);
-  body.innerHTML = text.replace(regex, '<mark>$1</mark>');
-  if (countEl) countEl.textContent = matches ? '\u627e\u5230 ' + matches.length + ' \u5904' : '\u65e0\u5339\u914d';
+  // textContent ignores <mark> wrappers, so it always yields the stable full
+  // text — counting on it (not innerHTML) avoids over-counting tags/entities.
+  var text = body.textContent;
+  var re = new RegExp(escapeRegExp(q), 'gi');
+  var matches = text.match(re);
+  var count = matches ? matches.length : 0;
+  if (!count) {
+    if (body.querySelector('mark')) body.textContent = text;
+    _postSearchIdx = -1;
+    if (countEl) countEl.textContent = '\u65e0\u5339\u914d';
+    return;
+  }
+  var parts = [];
+  var last = 0, idx = 0, m;
+  re.lastIndex = 0;
+  while ((m = re.exec(text)) !== null) {
+    parts.push(escapeHtml(text.slice(last, m.index)));
+    parts.push('<mark data-idx="' + idx + '">' + escapeHtml(m[0]) + '</mark>');
+    idx++;
+    last = m.index + m[0].length;
+    if (m.index === re.lastIndex) re.lastIndex++;
+  }
+  parts.push(escapeHtml(text.slice(last)));
+  body.innerHTML = parts.join('');
+  _jumpPostMatch(0);
+}
+
+function _jumpPostMatch(idx) {
+  var marks = document.querySelectorAll('.post-body mark');
+  if (!marks.length) return;
+  _postSearchIdx = ((idx % marks.length) + marks.length) % marks.length;
+  for (var i = 0; i < marks.length; i++) marks[i].classList.remove('current');
+  var cur = marks[_postSearchIdx];
+  cur.classList.add('current');
+  cur.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  var countEl = document.getElementById('postSearchCount');
+  if (countEl) countEl.textContent = (_postSearchIdx + 1) + ' / ' + marks.length;
+}
+
+function postMatchNext() {
+  if (_postSearchIdx < 0) return;
+  _jumpPostMatch(_postSearchIdx + 1);
+}
+function postMatchPrev() {
+  if (_postSearchIdx < 0) return;
+  _jumpPostMatch(_postSearchIdx - 1);
 }
 
 // ---- Floating actions ----
@@ -1701,13 +1900,19 @@ function showToast(msg) {
   setTimeout(function() { if (t.parentNode) t.remove(); }, 2600);
 }
 
-function floatBack() {
-  const post = document.querySelector('.post-header');
-  if (post && selectedGroupId && discussionCache[selectedGroupId]) {
-    showDiscussions(selectedGroupId, discussionCache[selectedGroupId]);
-  } else if (selectedGroupId) {
+// App-level "back" uses the browser history stack (instead of re-calling
+// showDiscussions, which would push a duplicate entry and make the browser
+// back button loop on the same view).
+function appBack() {
+  const st = history.state;
+  if (st && (st.view === 'group' || st.view === 'post')) {
+    history.back();
+  } else {
     showWelcome();
   }
+}
+function floatBack() {
+  appBack();
 }
 function floatRefresh() {
  const post = document.querySelector('.post-header');
@@ -1722,6 +1927,7 @@ function collapseFloatMenu() {
   fa.classList.remove('expanded');
   more.textContent = '⋮';
   more.title = '更多操作';
+  more.setAttribute('aria-expanded', 'false');
 }
 function toggleFloatMenu() {
   const fa = document.getElementById('floatActions');
@@ -1730,6 +1936,7 @@ function toggleFloatMenu() {
   const exp = fa.classList.toggle('expanded');
   more.textContent = exp ? '✕' : '⋮';
   more.title = exp ? '收起' : '更多操作';
+  more.setAttribute('aria-expanded', String(exp));
 }
 // While the menu is expanded, a click outside it only collapses the menu
 // (capture phase intercepts the event before the clicked element's own
@@ -1769,7 +1976,7 @@ function toggleMinimalMode() {
   try { localStorage.setItem('douban_minimal_mode', on ? '1' : '0'); } catch (e) {}
   applyMinimalMode();
   var btn = document.getElementById('minimalToggle');
-  if (btn) btn.classList.toggle('active', on);
+  if (btn) { btn.classList.toggle('active', on); btn.setAttribute('aria-pressed', String(on)); }
   showToast(on ? '极简模式：图片需点击显示' : '已退出极简模式');
 }
 function applyMinimalMode() {
@@ -1825,13 +2032,20 @@ function imgBoxHtml(url, fb, alt, failMode) {
 }
 function openImg(el) {
   const img = el && el.tagName === 'IMG' ? el : (el ? el.querySelector('img') : null);
-  if (img && img.dataset.url) openLightbox(img.dataset.url);
+  if (!img || !img.dataset.url) return;
+  // Gather every visible lightbox-able image so ←/→ can navigate between them.
+  const all = document.querySelectorAll('.image-gallery img[data-url], .comment-imgs img[data-url]');
+  const list = [];
+  for (var i = 0; i < all.length; i++) list.push(all[i].dataset.url);
+  const index = list.indexOf(img.dataset.url);
+  openLightbox(img.dataset.url, list, index < 0 ? 0 : index);
 }
-function openLightbox(url) {
+function openLightbox(url, list, index) {
   const lb = document.getElementById('lightbox');
   const img = document.getElementById('lightboxImg');
   if (!lb || !img) return;
-  img.src = url;
+  lb._list = (list && list.length) ? list : [url];
+  lb._index = index >= 0 ? index : 0;
   lb._zoom = 1; lb._tx = 0; lb._ty = 0;
   lb._drag = false;
   img.style.transform = 'scale(1) translate(0px,0px)';
@@ -1841,6 +2055,22 @@ function openLightbox(url) {
   function applyTransform() {
     img.style.transform = 'scale(' + lb._zoom + ') translate(' + Math.round(lb._tx) + 'px,' + Math.round(lb._ty) + 'px)';
   }
+  function updateCount() {
+    var c = document.getElementById('lightboxCount');
+    if (c) c.textContent = lb._list.length > 1 ? (lb._index + 1) + ' / ' + lb._list.length : '';
+  }
+  function showCurrent() {
+    img.src = lb._list[lb._index];
+    lb._zoom = 1; lb._tx = 0; lb._ty = 0;
+    applyTransform();
+    updateCount();
+  }
+  function nav(dir) {
+    if (lb._list.length < 2) return;
+    lb._index = (lb._index + dir + lb._list.length) % lb._list.length;
+    showCurrent();
+  }
+  showCurrent();
 
   lb._onWheel = function(e) {
     e.preventDefault();
@@ -1850,6 +2080,25 @@ function openLightbox(url) {
     showZoomIndicator(Math.round(lb._zoom * 100) + '%');
   };
   lb.addEventListener('wheel', lb._onWheel, { passive: false });
+
+  // Keyboard: ←/→ previous/next image, 0 reset, +/- zoom.
+  lb._onKey = function(e) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); nav(1); }
+    else if (e.key === '0') { lb._zoom = 1; lb._tx = 0; lb._ty = 0; applyTransform(); showZoomIndicator('100%'); }
+    else if (e.key === '+' || e.key === '=') { lb._zoom = Math.min(5, lb._zoom + 0.2); applyTransform(); showZoomIndicator(Math.round(lb._zoom * 100) + '%'); }
+    else if (e.key === '-') { lb._zoom = Math.max(0.3, lb._zoom - 0.2); applyTransform(); showZoomIndicator(Math.round(lb._zoom * 100) + '%'); }
+  };
+  document.addEventListener('keydown', lb._onKey);
+
+  // Double-click toggles between 1x and 2x zoom.
+  img.ondblclick = function(e) {
+    e.preventDefault();
+    lb._zoom = lb._zoom > 1.05 ? 1 : 2;
+    lb._tx = 0; lb._ty = 0;
+    applyTransform();
+    showZoomIndicator(Math.round(lb._zoom * 100) + '%');
+  };
 
   // Drag to pan (only when zoomed in)
   img.onmousedown = function(e) {
@@ -1883,13 +2132,20 @@ function closeLightbox() {
   document.body.style.overflow = '';
   document.body.style.userSelect = '';
   var img = document.getElementById('lightboxImg');
-  if (img) { img.onmousedown = null; img.style.cursor = ''; }
+  if (img) { img.onmousedown = null; img.ondblclick = null; img.style.cursor = ''; }
   document.onmousemove = null;
   document.onmouseup = null;
   if (lb._onWheel) {
     lb.removeEventListener('wheel', lb._onWheel);
     delete lb._onWheel;
   }
+  if (lb._onKey) {
+    document.removeEventListener('keydown', lb._onKey);
+    delete lb._onKey;
+  }
+  lb._list = null; lb._index = 0;
+  var c = document.getElementById('lightboxCount');
+  if (c) c.textContent = '';
   var zi = document.getElementById('zoomIndicator');
   if (zi) zi.style.opacity = '0';
 }
@@ -1902,6 +2158,10 @@ function isTypingTarget(e) {
   var t = e.target;
   return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
 }
+function toggleShortcuts() {
+  var ov = document.getElementById('shortcutsOverlay');
+  if (ov) ov.classList.toggle('show');
+}
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     var ov = document.getElementById('shortcutsOverlay');
@@ -1911,8 +2171,7 @@ document.addEventListener('keydown', function(e) {
   }
   if (isTypingTarget(e) || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === '?') {
-    var ov = document.getElementById('shortcutsOverlay');
-    if (ov) ov.classList.toggle('show');
+    toggleShortcuts();
   } else if (e.key.toLowerCase() === 'b') {
     floatBack();
   } else if (e.key.toLowerCase() === 'r') {
@@ -1977,7 +2236,7 @@ async function searchGroup(keyword) {
 
     if (!json.ok || !json.results || json.results.length === 0) {
       setStatus(`没有找到相关小组`, 'error');
-      app.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--text-muted);font-size:0.85rem;">没有找到相关小组，试试其他关键词</div>';
+      app.innerHTML = emptyState('🔍', '没有找到相关小组', '试试其他关键词');
       return;
     }
 
@@ -2015,7 +2274,7 @@ async function loadGroup(id) {
 
     if (!json.ok) {
       setStatus(`请求失败: ${json.error || '未知错误'}`, 'error');
-      app.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--error);font-size:0.8rem;">获取数据失败，请检查小组 ID 是否正确</div>';
+      app.innerHTML = emptyState('⚠', '获取数据失败', '请检查小组 ID 是否正确');
       return;
     }
 
@@ -2028,7 +2287,7 @@ async function loadGroup(id) {
     showDiscussions(id, json.data);
   } catch (err) {
     setStatus(`网络错误: ${err.message}`, 'error');
-    app.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--error);font-size:0.8rem;">无法连接到服务器</div>';
+    app.innerHTML = emptyState('⚠', '无法连接到服务器', '请检查服务是否在运行');
   }
 }
 
@@ -2073,9 +2332,9 @@ function toggleFavorite(groupId) {
   renderFavorites();
   pushFavoritesToServer();
   showToast(favs.some(function(f) { return f.id === groupId; }) ? '已收藏 ' + name : '已取消' + name);
-  if (selectedGroupId === groupId && discussionCache[groupId]) {
-    showDiscussions(groupId, discussionCache[groupId]);
-  }
+  // Only update the star button in place; re-rendering the whole list here
+  // would reset scroll position and push a duplicate history entry.
+  updateFavButton();
 }
 
 // Remove a group from favorites (used by the × button on favorite tags).
@@ -2096,7 +2355,11 @@ function toggleTheme() {
   const root = document.documentElement;
   const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
   root.setAttribute('data-theme', next);
-  document.getElementById('themeToggle').textContent = next === 'dark' ? '☀' : '☾';
+  const btn = document.getElementById('themeToggle');
+  // Icon shows the CURRENT theme; the title describes what the next click does.
+  btn.textContent = next === 'dark' ? '☾' : '☀';
+  btn.title = next === 'dark' ? '切换到亮色主题' : '切换到暗色主题';
+  btn.setAttribute('aria-pressed', String(next === 'dark'));
   localStorage.setItem('douban_theme', next);
 }
 
@@ -2119,7 +2382,11 @@ history.replaceState({view:'welcome'}, '');
   const saved = localStorage.getItem('douban_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
   const tb = document.getElementById('themeToggle');
-  if (tb) tb.textContent = saved === 'dark' ? '☀' : '☾';
+  if (tb) {
+    tb.textContent = saved === 'dark' ? '☾' : '☀';
+    tb.title = saved === 'dark' ? '切换到亮色主题' : '切换到暗色主题';
+    tb.setAttribute('aria-pressed', String(saved === 'dark'));
+  }
   try {
     const res = await fetch('/api/hot');
     const json = await res.json();
@@ -2136,7 +2403,7 @@ history.replaceState({view:'welcome'}, '');
   // Minimal mode: restore body class and button state.
   document.body.classList.toggle('minimal-mode', isMinimalMode());
   var mBtn = document.getElementById('minimalToggle');
-  if (mBtn) mBtn.classList.toggle('active', isMinimalMode());
+  if (mBtn) { mBtn.classList.toggle('active', isMinimalMode()); mBtn.setAttribute('aria-pressed', String(isMinimalMode())); }
   // Pull server-side favorites so all browsers share the same list.
   syncFavoritesFromServer();
 })();
@@ -2149,6 +2416,9 @@ history.replaceState({view:'welcome'}, '');
       <div class="shortcut-row"><span class="key">b</span><span class="desc">返回上一级</span></div>
       <div class="shortcut-row"><span class="key">r</span><span class="desc">刷新当前</span></div>
       <div class="shortcut-row"><span class="key">/</span><span class="desc">搜索帖子</span></div>
+      <div class="shortcut-row"><span class="key">← / →</span><span class="desc">大图上一张/下一张</span></div>
+      <div class="shortcut-row"><span class="key">+ / −</span><span class="desc">大图缩放</span></div>
+      <div class="shortcut-row"><span class="key">0</span><span class="desc">大图复位</span></div>
       <div class="shortcut-row"><span class="key">Esc</span><span class="desc">关闭</span></div>
     </div>
   </div>

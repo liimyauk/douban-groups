@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const { URL } = require('url');
 
 const PORT = 4112;
@@ -9,6 +10,11 @@ const HOST = '0.0.0.0';
 
 // Favorites are stored server-side so all browsers/devices share them.
 const FAVS_FILE = path.join(__dirname, 'favs.json');
+
+// In-memory cache for group discussion lists (reduces upstream requests and
+// makes repeat visits instant). Payload is the full JSON response object.
+const groupCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 function readFavs() {
   try {
@@ -237,6 +243,26 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
+// Send a JSON response, transparently gzip-compressing larger bodies when the
+// client supports it (the group list can be tens of KB).
+function sendJSON(req, res, status, obj) {
+  const body = JSON.stringify(obj);
+  const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+  const enc = (req.headers['accept-encoding'] || '').toLowerCase();
+  const buf = Buffer.from(body);
+  if (buf.length > 1024 && enc.includes('gzip')) {
+    const z = zlib.gzipSync(buf);
+    headers['Content-Encoding'] = 'gzip';
+    headers['Content-Length'] = z.length;
+    res.writeHead(status, headers);
+    res.end(z);
+  } else {
+    headers['Content-Length'] = buf.length;
+    res.writeHead(status, headers);
+    res.end(buf);
+  }
+}
+
 // ---------- Server ----------
 
 const server = http.createServer(async (req, res) => {
@@ -254,8 +280,13 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/group' && params.has('id')) {
       const groupId = params.get('id').trim();
       if (!/^[A-Za-z0-9_-]+$/.test(groupId)) {
-        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: false, error: '无效的小组 ID' }));
+        sendJSON(req, res, 400, { ok: false, error: '无效的小组 ID' });
+        return;
+      }
+
+      const cached = groupCache.get(groupId);
+      if (cached && (Date.now() - cached.time < CACHE_TTL)) {
+        sendJSON(req, res, 200, cached.payload);
         return;
       }
 
@@ -277,8 +308,9 @@ const server = http.createServer(async (req, res) => {
 
       const groupName = infoRes.ok ? (infoRes.data.name || infoRes.data.title || `小组 ${groupId}`) : `小组 ${groupId}`;
 
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true, groupId, data: { groupName, discussions, total: discussions.length } }));
+      const payload = { ok: true, groupId, data: { groupName, discussions, total: discussions.length } };
+      groupCache.set(groupId, { time: Date.now(), payload });
+      sendJSON(req, res, 200, payload);
       return;
     }
 
@@ -286,8 +318,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/post' && params.has('id')) {
       const topicId = params.get('id').trim();
       if (!/^[A-Za-z0-9_-]+$/.test(topicId)) {
-        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: false, error: '无效的帖子 ID' }));
+        sendJSON(req, res, 400, { ok: false, error: '无效的帖子 ID' });
         return;
       }
 
@@ -297,8 +328,7 @@ const server = http.createServer(async (req, res) => {
         const msg = topicRes.data && (topicRes.data.msg === 'need_permission' || topicRes.data.code === 1000)
           ? '豆瓣风控拦截：请稍后再试'
           : '无法获取帖子详情';
-        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: false, error: msg }));
+        sendJSON(req, res, 500, { ok: false, error: msg });
         return;
       }
 
@@ -355,56 +385,54 @@ const server = http.createServer(async (req, res) => {
           .trim();
       }
 
-      // Fetch comments from dedicated API
+      // Fetch comments from the dedicated API. Pages are requested in parallel
+      // (instead of sequentially) so popular posts with many comments load much
+      // faster. Results stay in original page order.
       let comments = [];
-      let totalComments = t.comments_count || 0;
+      const totalComments = t.comments_count || 0;
       let commentsLocked = false;
       const PAGE = 100;
       const MAX_COMMENTS = 1000;
-      let start = 0;
-      while (start < Math.min(totalComments, MAX_COMMENTS)) {
-        try {
-          const commentsRes = await fetchJSON(`${REXXAR_API}/v2/group/topic/${topicId}/comments?start=${start}&count=${PAGE}`);
-          if (!commentsRes.ok) break;
+      const target = Math.min(totalComments, MAX_COMMENTS);
+      if (target > 0) {
+        const starts = [];
+        for (let s = 0; s < target; s += PAGE) starts.push(s);
+        const pages = await Promise.all(starts.map(s =>
+          fetchJSON(`${REXXAR_API}/v2/group/topic/${topicId}/comments?start=${s}&count=${PAGE}`).catch(() => null)
+        ));
+        for (const commentsRes of pages) {
+          if (!commentsRes || !commentsRes.ok) continue;
           const cd = commentsRes.data;
           if (commentsRes.status >= 400) {
             if (cd && (cd.msg === 'need_permission' || cd.code === 1000)) commentsLocked = true;
-            break;
+            continue;
           }
           if (Array.isArray(cd.comments)) {
-            const batch = cd.comments.map(c => ({
+            comments = comments.concat(cd.comments.map(c => ({
               author: c.author?.name || '匿名',
               content: (c.text || '').replace(/<[^>]*>/g, '').trim(),
               images: extractCommentImages(c),
               time: c.create_time || '',
-            }));
-            comments = comments.concat(batch);
-            if (batch.length < PAGE) break;
-            start += batch.length;
-          } else {
-            break;
+            })));
           }
-        } catch (e) {
-          break;
         }
       }
 
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({
+      sendJSON(req, res, 200, {
         ok: true,
         data: {
           title: t.title || '无标题',
-           author: t.author?.name || '匿名',
-           content,
-           images,
-           comments,
-           commentsCount: totalComments,
-           commentsLocked,
-           createTime: t.create_time || '',
-         }
-      }));
-     return;
-   }
+          author: t.author?.name || '匿名',
+          content,
+          images,
+          comments,
+          commentsCount: totalComments,
+          commentsLocked,
+          createTime: t.create_time || '',
+        }
+      });
+      return;
+    }
 
     // ---------- API: proxy image (bypass hotlink protection) ----------
     if (pathname === '/api/image' && params.has('url')) {
@@ -462,8 +490,7 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true, q, results }));
+      sendJSON(req, res, 200, { ok: true, q, results });
       return;
     }
 
@@ -472,16 +499,14 @@ const server = http.createServer(async (req, res) => {
       const html = await fetchHTML('https://www.douban.com/group/explore');
       const results = parseHotGroups(html);
 
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true, results }));
+      sendJSON(req, res, 200, { ok: true, results });
       return;
     }
 
     // ---------- API: favorites (shared across browsers) ----------
     if (pathname === '/api/favs') {
       if (req.method === 'GET') {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: true, favs: sanitizeFavs(readFavs()) }));
+        sendJSON(req, res, 200, { ok: true, favs: sanitizeFavs(readFavs()) });
         return;
       }
       if (req.method === 'POST') {
@@ -492,8 +517,7 @@ const server = http.createServer(async (req, res) => {
           let same = false;
           try { same = new URL(origin).host === (req.headers.host || ''); } catch (e) {}
           if (!same) {
-            res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ ok: false, error: 'cross-origin write rejected' }));
+            sendJSON(req, res, 403, { ok: false, error: 'cross-origin write rejected' });
             return;
           }
         }
@@ -506,18 +530,19 @@ const server = http.createServer(async (req, res) => {
           try {
             const j = JSON.parse(body || '{}');
             const favs = sanitizeFavs(j.favs);
-            fs.writeFileSync(FAVS_FILE, JSON.stringify({ favs }, null, 2));
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ ok: true, count: favs.length }));
+            // Atomic write: write to a temp file then rename, so a concurrent
+            // request or crash can never leave a half-written favs.json.
+            const tmp = FAVS_FILE + '.tmp';
+            fs.writeFileSync(tmp, JSON.stringify({ favs }, null, 2));
+            fs.renameSync(tmp, FAVS_FILE);
+            sendJSON(req, res, 200, { ok: true, count: favs.length });
           } catch (e) {
-            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ ok: false, error: '无效的收藏数据' }));
+            sendJSON(req, res, 400, { ok: false, error: '无效的收藏数据' });
           }
         });
         return;
       }
-      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: false, error: 'method not allowed' }));
+      sendJSON(req, res, 405, { ok: false, error: 'method not allowed' });
       return;
     }
 
@@ -531,12 +556,23 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
-      const content = fs.readFileSync(filePath);
+      let content = fs.readFileSync(filePath);
       const ext = path.extname(filePath).toLowerCase();
-      res.writeHead(200, {
-        'Content-Type': MIME[ext] || 'application/octet-stream',
+      const type = MIME[ext] || 'application/octet-stream';
+      const headers = {
+        'Content-Type': type,
         'Cache-Control': 'no-cache',
-      });
+      };
+      // Compress text assets (index.html is the bulk of the payload).
+      const enc = (req.headers['accept-encoding'] || '').toLowerCase();
+      if (content.length > 1024 && /\btext\/|application\/(json|javascript)/.test(type) && enc.includes('gzip')) {
+        content = zlib.gzipSync(content);
+        headers['Content-Encoding'] = 'gzip';
+        headers['Content-Length'] = content.length;
+      } else {
+        headers['Content-Length'] = content.length;
+      }
+      res.writeHead(200, headers);
       res.end(content);
     } catch {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -544,8 +580,7 @@ const server = http.createServer(async (req, res) => {
     }
   } catch (err) {
     console.error('Server error:', err);
-    res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: false, error: err.message }));
+    sendJSON(req, res, 500, { ok: false, error: err.message });
   }
 });
 
