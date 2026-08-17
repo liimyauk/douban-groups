@@ -1429,6 +1429,13 @@ function showDiscussions(groupId, data) {
 
   const name = data.groupName || `小组 ${groupId}`;
   const list = data.discussions || [];
+  // Restore this group's sort preference (persisted across reloads) BEFORE
+  // rendering the toolbar, so the active sort button matches the applied order.
+  if (!list._sortMode) {
+    var savedSort = '';
+    try { savedSort = localStorage.getItem('douban_sort_' + groupId) || ''; } catch (e) {}
+    list._sortMode = savedSort === 'create' ? 'create' : 'reply';
+  }
   const groupLink = `https://www.douban.com/group/${groupId}/`;
   const fav = isFavorited(groupId);
 
@@ -1458,10 +1465,6 @@ function showDiscussions(groupId, data) {
   }
 
   discussionFullData[groupId] = list;
-  // Restore this group's sort preference (persisted across reloads).
-  var savedSort = '';
-  try { savedSort = localStorage.getItem('douban_sort_' + groupId) || ''; } catch (e) {}
-  if (!list._sortMode) list._sortMode = savedSort === 'create' ? 'create' : 'reply';
   if (list._sortMode === 'create') {
     list.sort(function(a,b) { return (b.createTime||'').localeCompare(a.createTime||''); });
   } else {
